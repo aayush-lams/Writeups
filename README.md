@@ -7,7 +7,7 @@ Whether you're studying for certifications, prepping for interviews, or just loo
 
 | Title | Description |
 |-------|-------------|
-| [SSH Auth Failure Diagnosis — Kali Linux VM](./infrastructure/ssh-debug-kali-vm.md) | Diagnosing stacked SSH failures on a libvirt/QEMU Kali VM — AllowUsers, PAM corruption, missing authorized_keys |
+| [SSH Auth Failure Diagnosis — Kali Linux VM](./linux/ssh-debug-kali-vm.md) | Diagnosing stacked SSH failures on a libvirt/QEMU Kali VM — AllowUsers, PAM corruption, missing authorized_keys |
 
 ---
 
