@@ -1,16 +1,13 @@
 # Writeups
 
-Documentation of real issues, debugging sessions, and infrastructure work. Not tutorials — just what happened, what broke, and how it got fixed.
+This repository is a collection of technical write-ups, notes, and practical guides as I learn Linux system administration and cybersecurity.
+Whether you're studying for certifications, prepping for interviews, or just looking for real-world examples, I hope these docs help you on your own journey.
 
-## Infrastructure
+## Linux
 
 | Title | Description |
 |-------|-------------|
 | [SSH Auth Failure Diagnosis — Kali Linux VM](./infrastructure/ssh-debug-kali-vm.md) | Diagnosing stacked SSH failures on a libvirt/QEMU Kali VM — AllowUsers, PAM corruption, missing authorized_keys |
-
-## CTF
-
-*Coming soon*
 
 ---
 
