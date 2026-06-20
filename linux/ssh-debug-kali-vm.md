@@ -33,6 +33,7 @@ There was no appearent detail on the console to look into, no any hints.
 `Permission denied (publickey,password)` has to be one of the most unhelpful error messages in all of Linux. The frustrating part isn't that it's vague, it's that it's vague in a way that actively misleads you. The exact same message shows up whether your private key doesn't match anything on the server, your password is flat out wrong, the username you typed doesn't exist as an account on the box, or — as I eventually found out — none of those subsystems were even being reached in the first place. SSH just bundles every possible rejection into one generic line and sends you off to guess. So, like most people would, I started working down the obvious checklist of things that usually cause this.
 
 **sshd_config first.**
+
 My first thought was that something in the daemon's own config was disabling authentication outright. Maybe `PasswordAuthentication` or `PubkeyAuthentication` had been flipped off somewhere along the way, possibly during an earlier hardening pass I'd forgotten about.
 
 ```bash
@@ -44,6 +45,7 @@ sudo grep -i "passwordauth\|pubkeyauth\|usepam" /etc/ssh/sshd_config
 Both were explicitly enabled. Not it.
 
 **Firewall next.**
+
 Next logical layer down: maybe something was filtering the connection before it even reached sshd, even though the TCP handshake clearly seemed to be completing.
 
 ```bash
@@ -53,6 +55,7 @@ sudo ufw status
 UFW was either inactive entirely or had port 22 explicitly opened already. Either way, nothing here was dropping packets. Not it.
 
 **Is sshd even listening?**
+
 At this point I wanted to rule out anything dumb, like the daemon silently not binding to the port I assumed it was on.
 
 ```bash
@@ -63,6 +66,7 @@ sudo ss -tlnp | grep 22
 It was bound and listening on all interfaces, exactly as expected. Not it.
 
 **Is the service actually healthy?**
+
 Maybe sshd was technically running but in some degraded or half-restarted state.
 
 ```bash
@@ -82,6 +86,7 @@ ssh-keygen -t ed25519
 Fresh keypair, copied the new public key over, tried again. Same result. Still rejected. Still zero explanation as to why.
 
 **the one command that actually mattered**
+
 Looking back, every single step above was a guess based on what *commonly* causes this error, not based on any actual evidence from the system itself. I was pattern-matching against past experience instead of asking the server directly what it didn't like. What I should have done from the very start was stop guessing and just watch sshd react in real time to the actual failed attempt. So I opened a second terminal into the Kali VM, tailed its logs in follow mode, and fired off the SSH attempt from the NixOS side at the same moment:
 
 ```bash
@@ -101,6 +106,7 @@ There it was, sitting in the very first line: `not allowed because not listed in
 
 **root cause**
 
+
 `AllowUsers` in `sshd_config` is a whitelist directive. The moment that directive exists in the config at all, only the exact usernames listed after it are permitted to authenticate over SSH — every other account on the system gets bounced before SSH even bothers checking a public key or prompting for a password. That's precisely why none of my earlier checks caught it: pubkey auth was enabled, password auth was enabled, the firewall was open, the port was listening, the service was healthy — every one of those systems was working correctly and simply never got a chance to run, because the connection was being rejected one step earlier in the pipeline than any of them.
 
 ```bash
@@ -111,6 +117,7 @@ sudo grep -i allowusers /etc/ssh/sshd_config
 `asur` was never anywhere on that list. The VM had accumulated leftover configuration from an earlier user at some point in its history, and nothing about the generic client-side error gave even the faintest indication that a whitelist directive was the actual thing standing in the way.
 
 **the fix**
+
 
 ```bash
 sudo nano /etc/ssh/sshd_config
@@ -140,6 +147,7 @@ Straight in, password prompt and all, exactly like it should have worked from th
 
 **takeaway**
 
+
 `Permission denied (publickey,password)` tells you that authentication failed somewhere — it does not tell you *which layer* of the process actually rejected you, and that ambiguity is what makes it such a time sink. Config flags, firewall rules, listening ports, and keypairs are all still reasonable first guesses, and honestly I'd probably check them again in roughly the same order next time, since they're fast to rule out. But the fastest path to the *actual* answer was always going to be the server's own logs, watched live during the real attempt, rather than me cycling through a mental checklist of past failures:
 
 ```bash
@@ -151,6 +159,7 @@ sudo tail -f /var/log/auth.log
 If I'd opened that log first instead of last, this whole thing would've been a thirty-second fix instead of an hour spent chasing the wrong layer of the stack.
 
 **quick reference**
+
 
 ```bash
 #follow sshd logs live (run on the server, attempt login from the client)
