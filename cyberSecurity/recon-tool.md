@@ -1,3 +1,8 @@
+---
+layout: default
+title: Recon Tool
+---
+
 # Building a Passive Recon Tool to Understand Web Security Better
 
 System backend is a vast topic. No two applications share the same mechanism, let alone the same backend. Each one has its own architecture, security posture, and weak points. The more we understand a system’s backend, the more we start to see how its security holds up, things like header policies, TLS configuration, DNS hygiene, and what information it leaks publicly.
