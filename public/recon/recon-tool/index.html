@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recon Tool — Writeups</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Writeups</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    
+    <div class="content">
+      <h1 id="building-a-passive-recon-tool-to-understand-web-security-better">Building a Passive Recon Tool to Understand Web Security Better</h1>
+<p>System backend is a vast topic. No two applications share the same mechanism, let alone the same backend. Each one has its own architecture, security posture, and weak points. The more we understand a system’s backend, the more we start to see how its security holds up, things like header policies, TLS configuration, DNS hygiene, and what information it leaks publicly.</p>
+<p>I created this simple recon tool to get a better understanding of a web application from a security point of view. This tool uses various passive recon techniques to gather information about a domain for initial security analysis.</p>
+<p>The goal was not to create a perfect scanner right from the get-go. It was also not meant to be an exploit tool or a vulnerability scanner. I wanted something simple that helps me understand what kind of public information a normal website exposes and how that information can be connected together.</p>
+<p>Passive reconnaissance means collecting information without doing intrusive scanning, exploitation, brute forcing, or anything aggressive. Everything comes from public sources: DNS resolvers, WHOIS registries, the web server’s own HTTP responses, TLS certificates, <code>robots.txt</code>, and <code>sitemap.xml</code>. It is the same information any normal visitor or public service could get, but collected in one place and turned into a bigger picture.</p>
+<p>That is where this tool comes in. Instead of running multiple commands separately and stitching the output together by hand, it does the collection in one flow and produces a proper report with findings, evidence, and recommendations.</p>
+<h2 id="why-i-chose-python-and-nix-flakes">Why I Chose Python and Nix Flakes</h2>
+<p>I chose Python as the language for this tool because it is simple and quick to get working. For a learning project, that mattered a lot. I wanted to learn the concepts along the way rather than spend too much time trying to make the tool perfect from the beginning.</p>
+<p>For environment management, I used a Nix flake to create a shell environment for the Python packages.</p>
+<p>I did not use <code>pyenv</code> here because I am using NixOS, and I wanted to respect the declarative and controlled nature of the system. I did not want the dependencies to scatter throughout the system. A Nix flake creates a controlled shell environment where the Python packages I install are limited to that shell. It basically does not bleed outside of it.</p>
+<p>That made the setup feel cleaner and more reproducible.</p>
+<h2 id="packages-i-used">Packages I Used</h2>
+<p>For the packages, I tried to keep the dependencies minimal while still not implementing everything from scratch.</p>
+<p>The main Python packages I used were:</p>
+<ul>
+<li><code>dnspython</code></li>
+<li><code>requests</code></li>
+<li><code>python-whois</code></li>
+</ul>
+<p><code>python-whois</code> was necessary for WHOIS lookup, which gives domain registration data from public registrars.</p>
+<p><code>requests</code> was used for standard HTTP requests while maintaining convenience and ease of use.</p>
+<p><code>dnspython</code> was used for DNS queries like <code>A</code>, <code>AAAA</code>, <code>NS</code>, <code>CNAME</code>, and <code>TXT</code> records.</p>
+<p>This minimal dependency list also kept the project easier to understand. Since the goal was learning, I did not want too much magic hidden behind large frameworks.</p>
+<h2 id="basic-architecture-of-the-tool">Basic Architecture of the Tool</h2>
+<p>The tool is separated into two big parts:</p>
+<ol>
+<li>Recon modules</li>
+<li>Reporting engine</li>
+</ol>
+<p>The recon modules are responsible for collecting specific types of information. Each module has one job. The main function of the tool goes through these modules one by one and gathers information about the domain we provide when running the tool.</p>
+<p>While writing this logic, I realized that even a seemingly normal website has many layers of public information around it. A domain is not just a domain. It has registration history, DNS records, IP addresses, certificates, HTTP headers, crawler rules, and sometimes small details that can reveal how the infrastructure is set up.</p>
+<p>The reporting engine then takes the raw collected data and turns it into something readable. Instead of just dumping JSON into the terminal, it creates a markdown report with a summary, findings, evidence, recommendations, and raw data in the appendix.</p>
+<p>That part was important to me because raw data alone is not always useful. A terminal dump may look interesting in the moment, but after a week it becomes hard to remember what mattered. A proper report gives structure to the findings.</p>
+<p>The rough flow looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>target domain
+</span></span><span style="display:flex;"><span>  -&gt; main.py runs each recon module
+</span></span><span style="display:flex;"><span>  -&gt; raw results are saved to raw_output.json
+</span></span><span style="display:flex;"><span>  -&gt; report engine analyzes the data
+</span></span><span style="display:flex;"><span>  -&gt; findings are generated with severity, evidence, and recommendation
+</span></span><span style="display:flex;"><span>  -&gt; final markdown report is written to report.md
+</span></span></code></pre></div><h2 id="what-the-recon-modules-check">What the Recon Modules Check</h2>
+<h3 id="whois-lookup">WHOIS Lookup</h3>
+<p>WHOIS lookup is used to query domain registry information. It can provide details like:</p>
+<ul>
+<li>registrar</li>
+<li>creation date</li>
+<li>expiration date</li>
+<li>domain age</li>
+<li>name servers</li>
+<li>domain status</li>
+<li>DNSSEC status</li>
+</ul>
+<p>This information gives general context about the domain. It can show where the domain is registered, how old it is, when it expires, and whether DNSSEC is enabled.</p>
+<p>This does not directly tell us how the application stores user credentials or how the internal backend works, but it does provide useful public context about the domain’s security posture.</p>
+<p>For example, a recently registered domain may be worth looking at more carefully in some cases. An expiring domain or missing DNSSEC may also be useful observations depending on the situation.</p>
+<h3 id="dns-records">DNS Records</h3>
+<p>After WHOIS, the tool checks DNS records. It currently looks for:</p>
+<ul>
+<li><code>A</code></li>
+<li><code>AAAA</code></li>
+<li><code>NS</code></li>
+<li><code>CNAME</code></li>
+<li><code>TXT</code></li>
+</ul>
+<p><code>A</code> records give IPv4 addresses, and <code>AAAA</code> records give IPv6 addresses. These records help identify where the domain points.</p>
+<p><code>NS</code> records show the name servers responsible for the domain.</p>
+<p><code>CNAME</code> records can reveal aliases or external services being used.</p>
+<p><code>TXT</code> records are also interesting because they often contain verification records or service-related configuration. Sometimes they show information about mail services, domain verification, or third-party tools connected to the domain.</p>
+<p>DNS data is one of those things that looks boring at first, but it gives a lot of context once you start reading it properly.</p>
+<h3 id="geoip-lookup">GeoIP Lookup</h3>
+<p>The IP address obtained from the DNS <code>A</code> record is then sent to a GeoIP lookup. In the current tool, it uses the first available IPv4 address from the <code>A</code> records.</p>
+<p>This gives approximate location and ISP information related to the visible IP address.</p>
+<p>One important thing I learned here is that this does not always mean we are seeing the real origin server location. If the site is behind a CDN like Cloudflare, the IP address may point to the CDN edge instead of the actual server hosting the application.</p>
+<p>So GeoIP is useful, but it has to be interpreted carefully. It gives context about the visible public IP, not always the real backend server.</p>
+<h3 id="http-headers">HTTP Headers</h3>
+<p>Following the flow, HTTP headers are analyzed. The tool does not keep every single header. It focuses mainly on security-relevant headers.</p>
+<p>Some examples are:</p>
+<ul>
+<li><code>Strict-Transport-Security</code></li>
+<li><code>Content-Security-Policy</code></li>
+<li><code>X-Frame-Options</code></li>
+<li><code>X-Content-Type-Options</code></li>
+<li><code>Referrer-Policy</code></li>
+<li><code>Permissions-Policy</code></li>
+<li><code>Cache-Control</code></li>
+<li><code>Access-Control-Allow-Origin</code></li>
+<li><code>Server</code></li>
+<li><code>X-Powered-By</code></li>
+</ul>
+<p>Headers are a very interesting part of web security because they tell the browser how to behave. Some headers protect against clickjacking, some reduce cross-site scripting risk, some control caching, and some prevent the browser from leaking too much referrer information.</p>
+<p>The tool fetches the site over HTTPS by default if no scheme is provided, follows redirects, and records the final URL, status code, redirect state, filtered headers, and security-relevant headers from redirect history.</p>
+<p>Missing headers do not always mean the site is directly vulnerable, but they are useful security observations. They tell us about the hardening posture of the web application.</p>
+<h3 id="tls-certificate-information">TLS Certificate Information</h3>
+<p>The SSL/TLS certificate of the domain is also analyzed. This gives information like:</p>
+<ul>
+<li>certificate subject</li>
+<li>certificate issuer</li>
+<li>valid from date</li>
+<li>valid until date</li>
+<li>days until expiry</li>
+<li>subject alternative names</li>
+</ul>
+<p>This is important because TLS certificates are what allow HTTPS to work properly. If a certificate is expired or close to expiry, browsers may show warnings and users may not be able to connect safely.</p>
+<p>A certificate nearing expiry is not automatically an exploit, but it is still an operational security issue. It should be tracked and renewed before it causes problems.</p>
+<h3 id="robotstxt-and-sitemapxml">robots.txt and sitemap.xml</h3>
+<p>The tool also checks <code>robots.txt</code> and <code>sitemap.xml</code>.</p>
+<p><code>robots.txt</code> gives instructions to web crawlers about which parts of the site they are allowed or disallowed to crawl. It is important to understand that <code>robots.txt</code> is not an access control mechanism. It does not protect sensitive pages. It only tells well-behaved crawlers what they should avoid.</p>
+<p>So if sensitive paths are listed in <code>robots.txt</code>, that itself can become useful information. It may reveal areas of the site that the owner did not want crawlers to index.</p>
+<p>For <code>sitemap.xml</code>, the tool first checks whether <code>robots.txt</code> contains a <code>Sitemap:</code> entry. If it finds one, it fetches that sitemap URL. If not, it falls back to the common <code>/sitemap.xml</code> path.</p>
+<p><code>sitemap.xml</code> provides a structured list of URLs that the site wants search engines or crawlers to discover. This can help understand the public structure of the site and identify important entry points.</p>
+<p>Again, this is not about attacking the site. It is about understanding what the website publicly exposes.</p>
+<h2 id="from-headers-to-security-findings">From Headers to Security Findings</h2>
+<p>The project also has a header analysis module. This module compares the headers received from the website against a list of security-related headers and recommended values.</p>
+<p>It checks for missing headers and weak or unexpected values. For example:</p>
+<ul>
+<li>missing <code>Content-Security-Policy</code></li>
+<li>missing <code>Strict-Transport-Security</code></li>
+<li>missing <code>X-Content-Type-Options</code></li>
+<li>wildcard <code>Access-Control-Allow-Origin</code></li>
+<li>technology disclosure through <code>Server</code> or <code>X-Powered-By</code></li>
+<li>weak cache-control directives</li>
+</ul>
+<p>The findings engine uses the header analysis output and turns it into proper report findings. This makes the flow cleaner: one part checks what is missing or weak, and another part explains why it matters in report form.</p>
+<h2 id="from-raw-data-to-a-report">From Raw Data to a Report</h2>
+<p>One thing I wanted to avoid was creating a tool that only dumps raw data. Raw WHOIS data, DNS records, and HTTP headers are useful, but they become much more useful when they are interpreted.</p>
+<p>So after collecting the information, <code>main.py</code> saves the full raw result into <code>raw_output.json</code>.</p>
+<p>Then the report engine builds a structured report from that data. The report contains findings with:</p>
+<ul>
+<li>severity</li>
+<li>category</li>
+<li>description</li>
+<li>evidence</li>
+<li>impact</li>
+<li>recommendation</li>
+<li>references where useful</li>
+</ul>
+<p>This makes the result easier to understand. Instead of only saying “this header is missing,” the report explains why the header matters, what the impact could be, and what can be done to fix it.</p>
+<p>For me, this was one of the most useful parts of the project. It helped me understand not just how to collect information, but also how to communicate security observations properly.</p>
+<h2 id="report-generation">Report Generation</h2>
+<p>After getting all the information, <code>main.py</code> writes the whole response into a JSON file as raw output.</p>
+<p>Then the report generator uses that data to generate a markdown report. The report includes sections like:</p>
+<ul>
+<li>title page</li>
+<li>executive summary</li>
+<li>scope</li>
+<li>methodology</li>
+<li>summary of findings</li>
+<li>detailed findings</li>
+<li>recommendations</li>
+<li>appendix with raw data</li>
+<li>footer</li>
+</ul>
+<p>The report generator currently builds markdown directly in Python using helper functions for headings, tables, bullets, numbered lists, and code blocks. I originally thought about it like a template system, but in the current project it is actually a hand-built markdown renderer.</p>
+<p>This made the tool feel more complete. A clean report is much more useful than a messy terminal output, especially if the goal is to review it later or share it with someone else.</p>
+<p>The report is not meant to say “this website is hacked” or “this is exploitable.” It is more like an initial passive reconnaissance summary. It gives observations that can guide deeper manual review.</p>
+<h2 id="limitations-of-the-current-project">Limitations of the Current Project</h2>
+<p>This tool is intentionally limited, and that is important to mention.</p>
+<p>First, it is passive. It does not scan ports, brute force directories, crawl the full website, test payloads, check login forms, or exploit anything. That keeps it safer and simpler, but it also means the findings are only surface-level observations.</p>
+<p>Second, the tool depends on public data sources and basic HTTP responses. If a domain blocks requests, hides behind a CDN, has rate limits, or returns different responses based on region/user-agent, the result may not represent the full infrastructure.</p>
+<p>Third, GeoIP is only approximate. The tool currently uses the first <code>A</code> record from DNS. If the site uses Cloudflare or another CDN, the location and ISP information may describe the CDN edge, not the actual origin server.</p>
+<p>Fourth, missing headers are not always vulnerabilities by themselves. They are security observations. A missing <code>Content-Security-Policy</code> or <code>Permissions-Policy</code> may matter a lot for one application and less for another depending on what the site actually does.</p>
+<p>Fifth, <code>robots.txt</code> and <code>sitemap.xml</code> only reveal what the site publicly exposes or advertises to crawlers. <code>robots.txt</code> is not authorization, and <code>sitemap.xml</code> is not a complete map of every possible route.</p>
+<p>Sixth, the report is generated as markdown only. That is readable and simple, but there is no PDF export, HTML styling, database storage, or web dashboard yet.</p>
+<p>Lastly, the tool is still a learning project. It is useful for understanding passive recon and generating an initial report, but it should not be treated as a complete security assessment.</p>
+<h2 id="what-i-learned">What I Learned</h2>
+<p>While building this tool, I learned that passive reconnaissance is not just about collecting information. It is about understanding what the information means.</p>
+<p>A missing header is not always a critical vulnerability. A Cloudflare IP address does not always mean we found the real server. <code>robots.txt</code> does not protect anything by itself. A certificate nearing expiry is not an attack, but it can become a problem if ignored.</p>
+<p>These small distinctions matter.</p>
+<p>I also learned that structuring a tool properly makes it easier to extend. Since the project is separated into modules, analysis, and reporting, adding a new check later should not require rewriting everything.</p>
+<p>The rough structure is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>domain
+</span></span><span style="display:flex;"><span>  -&gt; recon modules collect public data
+</span></span><span style="display:flex;"><span>  -&gt; raw output is saved as JSON
+</span></span><span style="display:flex;"><span>  -&gt; analysis engine creates findings
+</span></span><span style="display:flex;"><span>  -&gt; report generator writes markdown report
+</span></span></code></pre></div><p>This separation made the project easier to reason about.</p>
+<h2 id="closing-thoughts">Closing Thoughts</h2>
+<p>This project started as a simple attempt to understand web applications from a security point of view. But while building it, I realized that even basic passive recon can teach a lot.</p>
+<p>It taught me how domains are registered, how DNS records point to infrastructure, how HTTP headers affect browser security, how TLS certificates are managed, and how public files like <code>robots.txt</code> and <code>sitemap.xml</code> expose site structure.</p>
+<p>The tool is still simple, and there are many things that can be improved. But that was the point. I wanted to build something that works, learn the concepts behind it, and slowly improve it over time.</p>
+<p>For future improvements, features like better checks, cleaner output, maybe a better CLI, and possibly more recon modules could be added. But for now, this project already gave me a much better understanding of how public-facing web security information can be collected, analyzed, and reported.</p>
+
+    </div>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="https://aayush-lamsal.vercel.app">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

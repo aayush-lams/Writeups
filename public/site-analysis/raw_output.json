@@ -1,0 +1,71 @@
+{
+  "whois": {
+    "status": "error",
+    "reason": "No match for \"RASTRIYA-BANIJYA-BANK.FIREBASEAPP.COM\".\r\n>>> Last update of whois database: 2026-08-07T15:00:43Z <<<\r\n\r\nNOTICE: The expiration date displayed in this record is the date the\r\nregistrar's sponsorship of the domain name registration in the registry is\r\ncurrently set to expire. This date does not necessarily reflect the expiration\r\ndate of the domain name registrant's agreement with the sponsoring\r\nregistrar.  Users may consult the sponsoring registrar's Whois database to\r\nview the registrar's reported date of expiration for this registration.\r\n\r\nTERMS OF USE: You are not authorized to access or query our Whois\r\ndatabase through the use of electronic processes that are high-volume and\r\nautomated except as reasonably necessary to register domain names or\r\nmodify existing registrations; the Data in VeriSign Global Registry\r\nServices' (\"VeriSign\") Whois database is provided by VeriSign for\r\ninformation purposes only, and to assist persons in obtaining information\r\nabout or related to a domain name registration record. VeriSign does not\r\nguarantee its accuracy. By submitting a Whois query, you agree to abide\r\nby the following terms of use: You agree that you may use this Data only\r\nfor lawful purposes and that under no circumstances will you use this Data\r\nto: (1) allow, enable, or otherwise support the transmission of mass\r\nunsolicited, commercial advertising or solicitations via e-mail, telephone,\r\nor facsimile; or (2) enable high volume, automated, electronic processes\r\nthat apply to VeriSign (or its computer systems). The compilation,\r\nrepackaging, dissemination or other use of this Data is expressly\r\nprohibited without the prior written consent of VeriSign. You agree not to\r\nuse electronic processes that are automated and high-volume to access or\r\nquery the Whois database except as reasonably necessary to register\r\ndomain names or modify existing registrations. VeriSign reserves the right\r\nto restrict your access to the Whois database in its sole discretion to ensure\r\noperational stability.  VeriSign may restrict or terminate your access to the\r\nWhois database for failure to abide by these terms of use. VeriSign\r\nreserves the right to modify these terms at any time.\r\n\r\nThe Registry database contains ONLY .COM, .NET, .EDU domains and\r\nRegistrars.\r\n"
+  },
+  "dns": {
+    "status": "ok",
+    "records": {
+      "A": [
+        "199.36.158.100"
+      ],
+      "AAAA": [
+        "2620:0:890::100"
+      ],
+      "NS": [],
+      "CNAME": [],
+      "TXT": [
+        "\"v=spf1 redirect=_spf.google.com\"",
+        "\"v=DKIM1; k=rsa; t=s; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPtW5iwpXVPiH5FzJ7Nrl8USzuY9zqqzjE0D1r04xDN6qwziDnmgcFNNfMewVKN2D1O+2J9N14hRprzByFwfQW76yojh54Xu3uSbQ3JP0A7k8o8GutRF8zbFUA8n0ZH2y0cIEjMliXY4W4LwPA7m4q0ObmvSjhd63O9d8z1XkUBwIDAQAB\""
+      ]
+    }
+  },
+  "geoip": {
+    "status": "ok",
+    "country": "United States",
+    "country_code": "US",
+    "region": "California",
+    "city": "Mountain View",
+    "zip": "94043",
+    "lat": 37.4225,
+    "lon": -122.085,
+    "isp": "Fastly, Inc."
+  },
+  "headers": {
+    "status": "ok",
+    "final_url": "https://rastriya-banijya-bank.firebaseapp.com/",
+    "status_code": 200,
+    "redirected": true,
+    "headers": {
+      "Cache-Control": "max-age=3600",
+      "Content-Type": "text/html; charset=utf-8",
+      "Strict-Transport-Security": "max-age=31556926; includeSubDomains; preload"
+    },
+    "redirect_history": []
+  },
+  "ssl": {
+    "status": "ok",
+    "subject": "commonName=firebaseapp.com",
+    "issuer": "countryName=US, organizationName=Google Trust Services, commonName=WR4",
+    "valid_from": "2026-07-20T15:01:16+00:00",
+    "valid_until": "2026-10-18T15:01:15+00:00",
+    "days_until_expiry": 72,
+    "subject_alt_names": [
+      "firebaseapp.com",
+      "*.firebaseapp.com"
+    ]
+  },
+  "robots_sitemap": {
+    "status": "ok",
+    "robots_txt": {
+      "status": "ok",
+      "content": "# https://www.robotstxt.org/robotstxt.html\nUser-agent: *\nDisallow:\n",
+      "url": "https://rastriya-banijya-bank.firebaseapp.com/robots.txt"
+    },
+    "sitemap_xml": {
+      "status": "ok",
+      "content": "",
+      "url": "https://rastriya-banijya-bank.firebaseapp.com/sitemap.xml"
+    }
+  }
+}

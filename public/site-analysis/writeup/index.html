@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> — Writeups</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Writeups</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    
+    <div class="content">
+      <h1 id="passive-recon-case-study--rbb-bank-phishing-kit-firebase--vercel">Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)</h1>
+<p><strong>Date:</strong> August 2026<br>
+<strong>Target:</strong> <code>rastriya-banijya-bank.web.app</code> / <code>rastriya-banijya-bank.firebaseapp.com</code><br>
+<strong>Assessment Type:</strong> Passive Reconnaissance (non-intrusive)<br>
+<strong>Supporting Files:</strong> <a href="../raw_output.json"><code>raw_output.json</code></a>, <a href="../report.md"><code>report.md</code></a></p>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>This case study documents the passive reconnaissance of a phishing site impersonating <strong>Rastriya Banijya Bank (RBB)</strong>, a Nepali government-owned commercial bank. The site was discovered in the wild hosted at:</p>
+<ul>
+<li><code>rastriya-banijya-bank.web.app</code></li>
+<li><code>rastriya-banijya-bank.firebaseapp.com</code></li>
+</ul>
+<p>The phishing kit impersonates RBB&rsquo;s KYC update portal, luring victims with a fake &ldquo;KYC re-verification&rdquo; prompt. This is consistent with a documented fraud campaign — RBB issued public warnings in October and November 2025 about fraudulent KYC-update links exploiting the Gen-Z protest aftermath in Nepal. The lure preys on urgency and trust: users believe their bank account will be suspended unless they &ldquo;re-verify&rdquo; their identity through the provided link.</p>
+<p>The objective of this assessment was to characterize the phishing infrastructure, identify the attacker&rsquo;s hosting choices, analyze the kit&rsquo;s architecture, and determine what data is being harvested — all without interacting with or exposing any real victim data.</p>
+<hr>
+<h2 id="methodology">Methodology</h2>
+<p>All techniques employed were <strong>passive and non-intrusive</strong>:</p>
+<ol>
+<li><strong>WHOIS</strong> — Domain registration data from public registries.</li>
+<li><strong>DNS</strong> — Resource record enumeration (A, AAAA, NS, CNAME, TXT) from public resolvers.</li>
+<li><strong>HTTP Headers</strong> — Response header analysis from standard HTTP requests.</li>
+<li><strong>TLS Certificate Inspection</strong> — Certificate details extracted from the server&rsquo;s public endpoint.</li>
+<li><strong>GeoIP</strong> — IP geolocation via public databases.</li>
+<li><strong>robots.txt / sitemap.xml</strong> — Standard crawl directive and URL listing inspection.</li>
+<li><strong>Passive Proxy Capture</strong> — Burp Suite with intercept disabled, using fabricated test data to observe outbound traffic patterns without reading or storing any real victim submissions.</li>
+</ol>
+<p>No brute forcing, no document-ID enumeration, no database access, and no interaction beyond a single test submission with clearly fabricated data was performed. The rationale for this boundary is detailed in the <strong>Ethical/Legal Boundary</strong> section below.</p>
+<hr>
+<h2 id="key-findings">Key Findings</h2>
+<h3 id="1-free-zero-attribution-hosting">1. Free, Zero-Attribution Hosting</h3>
+<p>Both <code>web.app</code> and <code>firebaseapp.com</code> resolve to Google/Firebase Hosting anycast infrastructure:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Record</th>
+					<th>Value</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>A</td>
+					<td><code>199.36.158.100</code></td>
+			</tr>
+			<tr>
+					<td>AAAA</td>
+					<td><code>2620:0:890::100</code></td>
+			</tr>
+			<tr>
+					<td>GeoIP</td>
+					<td>Mountain View, CA, US (Fastly, Inc.)</td>
+			</tr>
+	</tbody>
+</table>
+<p>WHOIS queries for <code>RASTRIYA-BANIJYA-BANK.FIREBASEAPP.COM</code> return no match — the domain is a Firebase subdomain, not a separately registered domain. There is <strong>no registrar trail, no registrant data, and no purchase record</strong> to trace. Google&rsquo;s own infrastructure registration is the only information returned.</p>
+<p>This is a deliberate choice: Firebase Hosting provides free-tier hosting with zero attribution. The attacker never purchased a domain, never registered with a registrar, and can burn and redeploy the front-end in minutes. DNS and WHOIS provide no attacker-identifying data whatsoever.</p>
+<h3 id="2-split-architecture--disposable-front-end-persistent-back-end">2. Split Architecture — Disposable Front-End, Persistent Back-End</h3>
+<p>The phishing kit uses a <strong>split architecture</strong>:</p>
+<ul>
+<li>
+<p><strong>Front-end (Firebase):</strong> The credential-harvesting HTML/JS form is hosted on <code>rastriya-banijya-bank.firebaseapp.com</code>. This is the disposable component — cheap to create, trivial to redeploy under a new subdomain if taken down.</p>
+</li>
+<li>
+<p><strong>Back-end (Vercel):</strong> The actual data submission goes cross-origin via <code>fetch()</code> to a separate Vercel-hosted Express backend at <code>mero-khata.vercel.app/registerRBB</code>. This is the persistent component — it survives front-end takedowns and can receive submissions from any new front-end the attacker deploys.</p>
+</li>
+</ul>
+<p>This separation is a hallmark of modern phishing kit design. The front-end is ephemeral; the back-end is the real infrastructure. Disrupting one does not necessarily disrupt the other.</p>
+<h3 id="3-backend-stack-and-behavior">3. Backend Stack and Behavior</h3>
+<p>Response headers from the Vercel endpoint reveal:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Header</th>
+					<th>Value</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>X-Powered-By</td>
+					<td>Express</td>
+			</tr>
+			<tr>
+					<td>Server</td>
+					<td>Vercel</td>
+			</tr>
+			<tr>
+					<td>Status</td>
+					<td>201 Created</td>
+			</tr>
+			<tr>
+					<td>Response Body</td>
+					<td><code>{&quot;docID&quot;:&quot;&lt;20-char random ID&gt;&quot;}</code></td>
+			</tr>
+	</tbody>
+</table>
+<p>The <code>201 Created</code> status with a returned <code>docID</code> field indicates the backend writes each submission to a <strong>document database</strong> (Firestore-style), not just relaying data via email. Stolen data is <strong>persistently stored</strong> in the attacker&rsquo;s database, enabling later retrieval, aggregation, and sale.</p>
+<h3 id="4-harvested-data-fields--full-kyc-identity-theft">4. Harvested Data Fields — Full KYC Identity Theft</h3>
+<p>The multipart form fields captured during passive observation were:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>Username</code></td>
+					<td>Bank username / login ID</td>
+			</tr>
+			<tr>
+					<td><code>phoneNumber</code></td>
+					<td>Phone number linked to the account</td>
+			</tr>
+			<tr>
+					<td><code>password</code></td>
+					<td>Account password</td>
+			</tr>
+			<tr>
+					<td><code>transactionPin</code></td>
+					<td>Transaction PIN (authorizes live transfers)</td>
+			</tr>
+			<tr>
+					<td><code>FatherName</code></td>
+					<td>Father&rsquo;s name (KYC identity field)</td>
+			</tr>
+			<tr>
+					<td><code>citizenship</code></td>
+					<td>Citizenship certificate number</td>
+			</tr>
+			<tr>
+					<td><code>nin</code></td>
+					<td>National ID Number</td>
+			</tr>
+	</tbody>
+</table>
+<p>This goes <strong>beyond login credentials</strong>. The kit is built to capture bank-grade identity verification data and the transaction PIN needed to authorize live transfers. This matches the &ldquo;KYC re-verification&rdquo; lure described in RBB&rsquo;s public fraud warnings — the form fields are specifically designed to support full identity theft and unauthorized transactions, not just account takeover.</p>
+<h3 id="5-overly-permissive-cors-on-backend">5. Overly Permissive CORS on Backend</h3>
+<p>The Vercel endpoint at <code>mero-khata.vercel.app</code> returns:</p>
+<pre tabindex="0"><code>Access-Control-Allow-Origin: *
+</code></pre><p>This means <strong>any origin</strong> can POST to (and likely query) this backend. For a phishing kit, this is a real security weakness — it means:</p>
+<ul>
+<li>Any website can submit data to the attacker&rsquo;s database.</li>
+<li>The backend has no origin validation, making it trivially discoverable and potentially abusable by third parties.</li>
+<li>This is a viable reporting/disruption angle for platform abuse teams (Vercel) — the permissive CORS policy could facilitate unauthorized access to the stored victim data.</li>
+</ul>
+<h3 id="6-missing-baseline-security-headers">6. Missing Baseline Security Headers</h3>
+<p>The automated report (<a href="../report.md"><code>report.md</code></a>) identified 8 missing or misconfigured security headers on the phishing front-end:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Severity</th>
+					<th>Finding</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Medium</td>
+					<td>Missing Content Security Policy (CSP)</td>
+			</tr>
+			<tr>
+					<td>Medium</td>
+					<td>Missing Clickjacking Protection (X-Frame-Options)</td>
+			</tr>
+			<tr>
+					<td>Medium</td>
+					<td>TLS Certificate Approaching Expiry (72 days)</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing X-Content-Type-Options</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Referrer-Policy</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Permissions-Policy</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Cross-Origin Isolation Headers</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Non-Restrictive Cache-Control (<code>max-age=3600</code>)</td>
+			</tr>
+	</tbody>
+</table>
+<p>These are standard hardening gaps and <strong>not unique to malicious sites</strong> — many legitimate sites also lack these headers. However, in this context they support the assessment that this is a hastily built phishing kit with no attention to defensive security posture. The presence of <code>Strict-Transport-Security</code> (HSTS) with preload is the only security header present, and this is likely a Firebase Hosting default rather than an attacker configuration choice.</p>
+<hr>
+<h2 id="tls-observations">TLS Observations</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Value</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Subject</td>
+					<td><code>firebaseapp.com</code></td>
+			</tr>
+			<tr>
+					<td>Issuer</td>
+					<td>Google Trust Services (WR4)</td>
+			</tr>
+			<tr>
+					<td>SANs</td>
+					<td><code>firebaseapp.com</code>, <code>*.firebaseapp.com</code></td>
+			</tr>
+			<tr>
+					<td>Valid From</td>
+					<td>2026-07-20</td>
+			</tr>
+			<tr>
+					<td>Valid Until</td>
+					<td>2026-10-18</td>
+			</tr>
+			<tr>
+					<td>Days Until Expiry</td>
+					<td>72</td>
+			</tr>
+	</tbody>
+</table>
+<p>The certificate is a <strong>shared Google Trust Services wildcard</strong> covering all <code>*.firebaseapp.com</code> subdomains. It reveals nothing attacker-specific — this is the same certificate served to every Firebase Hosting project. The 72-day expiry window confirms the certificate was recently auto-renewed (Firebase manages TLS automatically). No attacker-specific TLS configuration was observed.</p>
+<hr>
+<h2 id="ethicallegal-boundary-maintained">Ethical/Legal Boundary Maintained</h2>
+<p>All assessment stayed within strict passive and ethical limits:</p>
+<ul>
+<li>
+<p><strong>No brute forcing</strong> of any kind.</p>
+</li>
+<li>
+<p><strong>No document-ID enumeration</strong> or database access attempts.</p>
+</li>
+<li>
+<p><strong>No interaction</strong> beyond a single test submission with <strong>fabricated data</strong>:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Test Value</th>
+					<th>Label</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Username</td>
+					<td><code>aswin</code></td>
+					<td>Fabricated</td>
+			</tr>
+			<tr>
+					<td>phoneNumber</td>
+					<td><code>fake phone</code></td>
+					<td>Fabricated</td>
+			</tr>
+			<tr>
+					<td>password</td>
+					<td><code>customerKYC</code></td>
+					<td>Fabricated</td>
+			</tr>
+			<tr>
+					<td>transactionPin</td>
+					<td><code>0978</code></td>
+					<td>Fabricated</td>
+			</tr>
+	</tbody>
+</table>
+</li>
+<li>
+<p><strong>No real victim data was accessed, read, or stored.</strong></p>
+</li>
+</ul>
+<p><strong>Why this boundary matters:</strong> The backend returns Firestore-style 20-character random document IDs on submission. Firestore document IDs are random strings drawn from a keyspace of ~62^20 (approximately 7 × 10^35 possibilities). They are not sequential, not guessable, and not practically enumerable. Any attempt to enumerate or access document IDs beyond the single test submission would risk accessing <strong>real victims&rsquo; stolen credentials</strong> — a legal and ethical line regardless of intent or authorization. The passive recon scope was sufficient to characterize the kit&rsquo;s architecture, data fields, and infrastructure without crossing this line.</p>
+<hr>
+<h2 id="recommended-takedownreporting-actions">Recommended Takedown/Reporting Actions</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Action</th>
+					<th>Target</th>
+					<th>Details</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>Google Safe Browsing Report</strong></td>
+					<td><code>rastriya-banijya-bank.web.app</code> / <code>rastriya-banijya-bank.firebaseapp.com</code></td>
+					<td>Report via <a href="https://safebrowsing.google.com/safebrowsing/report_phish/">Google Safe Browsing</a> — flag as phishing site impersonating a financial institution.</td>
+			</tr>
+			<tr>
+					<td><strong>Firebase/Google Abuse Report</strong></td>
+					<td>Firebase Hosting project</td>
+					<td>Report via <a href="https://support.google.com/firebase/answer/1711204">Google Cloud Abuse</a> — Firebase subdomain used for phishing.</td>
+			</tr>
+			<tr>
+					<td><strong>Vercel Abuse Report</strong></td>
+					<td><code>mero-khata.vercel.app</code></td>
+					<td>Email <code>abuse@vercel.com</code> with evidence of the backend at <code>/registerRBB</code> accepting stolen credential submissions. Include the CORS policy (<code>Access-Control-Allow-Origin: *</code>) as evidence of the backend&rsquo;s role.</td>
+			</tr>
+			<tr>
+					<td><strong>Direct Report to RBB</strong></td>
+					<td>Rastriya Banijya Bank</td>
+					<td>RBB has <strong>publicly solicited</strong> reports of fraudulent sites impersonating the bank. Forward findings directly to their fraud/compliance team.</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="lessons-learned--skills-demonstrated">Lessons Learned / Skills Demonstrated</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Skill</th>
+					<th>Application</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>Domain-level WHOIS/DNS recon</strong></td>
+					<td>Queried WHOIS (no match — Firebase subdomain), enumerated A/AAAA/TXT records, identified SPF/DKIM records.</td>
+			</tr>
+			<tr>
+					<td><strong>Hosting-platform fingerprinting</strong></td>
+					<td>Distinguished Firebase Hosting (front-end) from Vercel (back-end) via response headers, DNS resolution, and URL patterns.</td>
+			</tr>
+			<tr>
+					<td><strong>Passive proxy traffic analysis</strong></td>
+					<td>Used Burp Suite (intercept off) to capture request/response patterns with fabricated test data.</td>
+			</tr>
+			<tr>
+					<td><strong>HTTP response fingerprinting</strong></td>
+					<td>Identified Express + Vercel stack via <code>X-Powered-By</code> and <code>Server</code> headers; noted missing security headers as kit-characterization evidence.</td>
+			</tr>
+			<tr>
+					<td><strong>Phishing kit architecture analysis</strong></td>
+					<td>Mapped the front-end/back-end split (Firebase → Vercel), identified the cross-origin <code>fetch()</code> data exfiltration pattern, and classified the kit as a modern disposable-front-end design.</td>
+			</tr>
+			<tr>
+					<td><strong>Sensitive-data-field risk classification</strong></td>
+					<td>Analyzed form fields and determined the kit targets full KYC identity theft (citizenship, NID, transaction PIN) beyond simple credential phishing.</td>
+			</tr>
+			<tr>
+					<td><strong>IDOR-style enumeration boundary recognition</strong></td>
+					<td>Recognized that Firestore&rsquo;s random document ID scheme (~62^20 keyspace) is not practically guessable, and chose not to enumerate — preserving the ethical/legal line.</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="files-in-this-writeup">Files in This Writeup</h2>
+<table>
+	<thead>
+			<tr>
+					<th>File</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>raw_output.json</code></td>
+					<td>Raw JSON output from the passive recon tool (WHOIS, DNS, GeoIP, headers, TLS, robots/sitemap).</td>
+			</tr>
+			<tr>
+					<td><code>report.md</code></td>
+					<td>Auto-generated markdown report summarizing security header findings and recommendations.</td>
+			</tr>
+			<tr>
+					<td><code>writeup.md</code></td>
+					<td>This document — the full case study writeup.</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<p><em>This writeup is intended for educational and portfolio purposes. No real victim data, live document IDs, bot tokens, or credentials beyond the documented fabricated test values are included. All infrastructure has been reported through appropriate channels.</em></p>
+
+    </div>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="https://aayush-lamsal.vercel.app">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

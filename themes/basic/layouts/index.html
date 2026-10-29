@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Site.Title }}</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">{{ .Site.Title }}</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    <p>{{ .Site.Params.description }}</p>
+    <h2>Categories</h2>
+    <ul>
+      <li><a href="/linux/">Linux</a> — sysadmin, SSH, NixOS</li>
+      <li><a href="/ctf/">CTF</a> — Capture The Flag challenges</li>
+      <li><a href="/recon/">Security</a> — Recon, analysis, reports</li>
+    </ul>
+    <p><a href="{{ .Site.Params.main_site }}">Main site</a></p>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="{{ .Site.Params.main_site }}">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

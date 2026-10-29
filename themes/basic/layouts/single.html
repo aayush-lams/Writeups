@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }} — {{ .Site.Title }}</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">{{ .Site.Title }}</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    {{ if .Params.category }}
+      <h2>{{ .Params.category }}</h2>
+    {{ end }}
+    <div class="content">
+      {{ .Content }}
+    </div>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="{{ .Site.Params.main_site }}">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

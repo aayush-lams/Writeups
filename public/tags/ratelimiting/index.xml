@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Ratelimiting on Writeups</title>
+		<link>http://localhost:1313/tags/ratelimiting/</link>
+		<description>Recent content in Ratelimiting on Writeups</description>
+		<generator>Hugo</generator>
+		<language>en</language>
+		
+		
+		
+		
+			<lastBuildDate>Mon, 26 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://localhost:1313/tags/ratelimiting/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>Fool the Lockout</title>
+				<link>http://localhost:1313/ctf/fool_the_lockout/</link>
+				<pubDate>Mon, 26 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/ctf/fool_the_lockout/</guid>
+				<description>&lt;h1 id=&#34;fool-the-lockout&#34;&gt;Fool the Lockout&lt;/h1&gt;&#xA;&lt;blockquote&gt;&#xA;&lt;p&gt;&lt;strong&gt;Category:&lt;/strong&gt; Web | &lt;strong&gt;difficulty&lt;/strong&gt; : Medium | &lt;strong&gt;platform&lt;/strong&gt; : PicoCTF&lt;/p&gt;&#xA;&lt;/blockquote&gt;&#xA;&lt;p&gt;&lt;strong&gt;Problem:&lt;/strong&gt; The challenge is a login web page with faulty rate-limiting logic. We&amp;rsquo;re given a leaked &lt;code&gt;username;password&lt;/code&gt; list and expected to brute-force the login while bypassing the rate limit.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Solution in one line:&lt;/strong&gt; Stay just under the server&amp;rsquo;s max-requests-per-epoch threshold by pacing requests evenly within each window, so the lockout condition is never triggered.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Concepts:&lt;/strong&gt; &lt;code&gt;rate-limit bypassing&lt;/code&gt; &lt;code&gt;brute-forcing&lt;/code&gt; &lt;code&gt;python scripting&lt;/code&gt;&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

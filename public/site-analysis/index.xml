@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Site Analysis on Writeups</title>
+		<link>http://localhost:1313/site-analysis/</link>
+		<description>Recent content in Site Analysis on Writeups</description>
+		<generator>Hugo</generator>
+		<language>en</language>
+		
+		
+		
+		
+			<atom:link href="http://localhost:1313/site-analysis/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title></title>
+				<link>http://localhost:1313/site-analysis/writeup/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/site-analysis/writeup/</guid>
+				<description>&lt;h1 id=&#34;passive-recon-case-study--rbb-bank-phishing-kit-firebase--vercel&#34;&gt;Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)&lt;/h1&gt;&#xA;&lt;p&gt;&lt;strong&gt;Date:&lt;/strong&gt; August 2026&lt;br&gt;&#xA;&lt;strong&gt;Target:&lt;/strong&gt; &lt;code&gt;rastriya-banijya-bank.web.app&lt;/code&gt; / &lt;code&gt;rastriya-banijya-bank.firebaseapp.com&lt;/code&gt;&lt;br&gt;&#xA;&lt;strong&gt;Assessment Type:&lt;/strong&gt; Passive Reconnaissance (non-intrusive)&lt;br&gt;&#xA;&lt;strong&gt;Supporting Files:&lt;/strong&gt; &lt;a href=&#34;../raw_output.json&#34;&gt;&lt;code&gt;raw_output.json&lt;/code&gt;&lt;/a&gt;, &lt;a href=&#34;../report.md&#34;&gt;&lt;code&gt;report.md&lt;/code&gt;&lt;/a&gt;&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;&#xA;&lt;p&gt;This case study documents the passive reconnaissance of a phishing site impersonating &lt;strong&gt;Rastriya Banijya Bank (RBB)&lt;/strong&gt;, a Nepali government-owned commercial bank. The site was discovered in the wild hosted at:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;code&gt;rastriya-banijya-bank.web.app&lt;/code&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;code&gt;rastriya-banijya-bank.firebaseapp.com&lt;/code&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;The phishing kit impersonates RBB&amp;rsquo;s KYC update portal, luring victims with a fake &amp;ldquo;KYC re-verification&amp;rdquo; prompt. This is consistent with a documented fraud campaign — RBB issued public warnings in October and November 2025 about fraudulent KYC-update links exploiting the Gen-Z protest aftermath in Nepal. The lure preys on urgency and trust: users believe their bank account will be suspended unless they &amp;ldquo;re-verify&amp;rdquo; their identity through the provided link.&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

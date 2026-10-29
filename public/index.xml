@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Writeups</title>
+		<link>http://localhost:1313/</link>
+		<description>Recent content on Writeups</description>
+		<generator>Hugo</generator>
+		<language>en</language>
+		
+		
+		
+		
+			<lastBuildDate>Mon, 26 Oct 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>Fool the Lockout</title>
+				<link>http://localhost:1313/ctf/fool_the_lockout/</link>
+				<pubDate>Mon, 26 Oct 2026 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/ctf/fool_the_lockout/</guid>
+				<description>&lt;h1 id=&#34;fool-the-lockout&#34;&gt;Fool the Lockout&lt;/h1&gt;&#xA;&lt;blockquote&gt;&#xA;&lt;p&gt;&lt;strong&gt;Category:&lt;/strong&gt; Web | &lt;strong&gt;difficulty&lt;/strong&gt; : Medium | &lt;strong&gt;platform&lt;/strong&gt; : PicoCTF&lt;/p&gt;&#xA;&lt;/blockquote&gt;&#xA;&lt;p&gt;&lt;strong&gt;Problem:&lt;/strong&gt; The challenge is a login web page with faulty rate-limiting logic. We&amp;rsquo;re given a leaked &lt;code&gt;username;password&lt;/code&gt; list and expected to brute-force the login while bypassing the rate limit.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Solution in one line:&lt;/strong&gt; Stay just under the server&amp;rsquo;s max-requests-per-epoch threshold by pacing requests evenly within each window, so the lockout condition is never triggered.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;Concepts:&lt;/strong&gt; &lt;code&gt;rate-limit bypassing&lt;/code&gt; &lt;code&gt;brute-forcing&lt;/code&gt; &lt;code&gt;python scripting&lt;/code&gt;&lt;/p&gt;</description>
+			</item>
+			<item>
+				<title>SSH Auth Failure Diagnosis — Kali Linux VM</title>
+				<link>http://localhost:1313/linux/ssh-debug/</link>
+				<pubDate>Fri, 19 Jun 2026 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/linux/ssh-debug/</guid>
+				<description>&lt;blockquote&gt;&#xA;&lt;p&gt;PROBLEM &amp;gt; SSH from my NixOS host into a Kali VM. Should&amp;rsquo;ve taken thirty seconds. Took an hour.&lt;/p&gt;&#xA;&lt;/blockquote&gt;</description>
+			</item>
+			<item>
+				<title></title>
+				<link>http://localhost:1313/site-analysis/writeup/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/site-analysis/writeup/</guid>
+				<description>&lt;h1 id=&#34;passive-recon-case-study--rbb-bank-phishing-kit-firebase--vercel&#34;&gt;Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)&lt;/h1&gt;&#xA;&lt;p&gt;&lt;strong&gt;Date:&lt;/strong&gt; August 2026&lt;br&gt;&#xA;&lt;strong&gt;Target:&lt;/strong&gt; &lt;code&gt;rastriya-banijya-bank.web.app&lt;/code&gt; / &lt;code&gt;rastriya-banijya-bank.firebaseapp.com&lt;/code&gt;&lt;br&gt;&#xA;&lt;strong&gt;Assessment Type:&lt;/strong&gt; Passive Reconnaissance (non-intrusive)&lt;br&gt;&#xA;&lt;strong&gt;Supporting Files:&lt;/strong&gt; &lt;a href=&#34;../raw_output.json&#34;&gt;&lt;code&gt;raw_output.json&lt;/code&gt;&lt;/a&gt;, &lt;a href=&#34;../report.md&#34;&gt;&lt;code&gt;report.md&lt;/code&gt;&lt;/a&gt;&lt;/p&gt;&#xA;&lt;hr&gt;&#xA;&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;&#xA;&lt;p&gt;This case study documents the passive reconnaissance of a phishing site impersonating &lt;strong&gt;Rastriya Banijya Bank (RBB)&lt;/strong&gt;, a Nepali government-owned commercial bank. The site was discovered in the wild hosted at:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;code&gt;rastriya-banijya-bank.web.app&lt;/code&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;code&gt;rastriya-banijya-bank.firebaseapp.com&lt;/code&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;The phishing kit impersonates RBB&amp;rsquo;s KYC update portal, luring victims with a fake &amp;ldquo;KYC re-verification&amp;rdquo; prompt. This is consistent with a documented fraud campaign — RBB issued public warnings in October and November 2025 about fraudulent KYC-update links exploiting the Gen-Z protest aftermath in Nepal. The lure preys on urgency and trust: users believe their bank account will be suspended unless they &amp;ldquo;re-verify&amp;rdquo; their identity through the provided link.&lt;/p&gt;</description>
+			</item>
+			<item>
+				<title>Recon Tool</title>
+				<link>http://localhost:1313/recon/recon-tool/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/recon/recon-tool/</guid>
+				<description>&lt;h1 id=&#34;building-a-passive-recon-tool-to-understand-web-security-better&#34;&gt;Building a Passive Recon Tool to Understand Web Security Better&lt;/h1&gt;&#xA;&lt;p&gt;System backend is a vast topic. No two applications share the same mechanism, let alone the same backend. Each one has its own architecture, security posture, and weak points. The more we understand a system’s backend, the more we start to see how its security holds up, things like header policies, TLS configuration, DNS hygiene, and what information it leaks publicly.&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

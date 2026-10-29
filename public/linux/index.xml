@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Linux on Writeups</title>
+		<link>http://localhost:1313/linux/</link>
+		<description>Recent content in Linux on Writeups</description>
+		<generator>Hugo</generator>
+		<language>en</language>
+		
+		
+		
+		
+			<lastBuildDate>Fri, 19 Jun 2026 00:00:00 +0000</lastBuildDate>
+		
+			<atom:link href="http://localhost:1313/linux/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>SSH Auth Failure Diagnosis — Kali Linux VM</title>
+				<link>http://localhost:1313/linux/ssh-debug/</link>
+				<pubDate>Fri, 19 Jun 2026 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/linux/ssh-debug/</guid>
+				<description>&lt;blockquote&gt;&#xA;&lt;p&gt;PROBLEM &amp;gt; SSH from my NixOS host into a Kali VM. Should&amp;rsquo;ve taken thirty seconds. Took an hour.&lt;/p&gt;&#xA;&lt;/blockquote&gt;</description>
+			</item>
+	</channel>
+</rss>

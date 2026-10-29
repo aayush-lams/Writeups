@@ -1,0 +1,23 @@
+baseURL = "https://aayush-lamsal.vercel.app/"
+title = "Writeups"
+theme = "basic"
+
+ignoreLogs = ['warning-home-page-is-leaf-bundle']
+
+[params]
+  main_site = "https://aayush-lamsal.vercel.app"
+  description = "Linux & Cybersecurity technical write-ups"
+
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+  [[menu.main]]
+    name = "Linux"
+    url = "/linux/"
+  [[menu.main]]
+    name = "CTF"
+    url = "/ctf/"
+  [[menu.main]]
+    name = "Security"
+    url = "/recon/"

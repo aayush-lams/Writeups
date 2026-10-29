@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Security on Writeups</title>
+		<link>http://localhost:1313/recon/</link>
+		<description>Recent content in Security on Writeups</description>
+		<generator>Hugo</generator>
+		<language>en</language>
+		
+		
+		
+		
+			<atom:link href="http://localhost:1313/recon/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title>Recon Tool</title>
+				<link>http://localhost:1313/recon/recon-tool/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/recon/recon-tool/</guid>
+				<description>&lt;h1 id=&#34;building-a-passive-recon-tool-to-understand-web-security-better&#34;&gt;Building a Passive Recon Tool to Understand Web Security Better&lt;/h1&gt;&#xA;&lt;p&gt;System backend is a vast topic. No two applications share the same mechanism, let alone the same backend. Each one has its own architecture, security posture, and weak points. The more we understand a system’s backend, the more we start to see how its security holds up, things like header policies, TLS configuration, DNS hygiene, and what information it leaks publicly.&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>
