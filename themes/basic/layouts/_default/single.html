@@ -1,0 +1,10 @@
+{{ define "title" }}{{ .Title }} — {{ .Site.Title }}{{ end }}
+{{ define "main" }}
+<section id="single" class="pageSection singleSection">
+  <div class="pageHead">&gt; {{ .Title }} &gt;</div>
+  {{ if .Params.category }}
+    <div class="categoryLine">{{ .Params.category }}</div>
+  {{ end }}
+  <div class="content">{{ .Content }}</div>
+</section>
+{{ end }}

@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Recon Tool
+date: 2026-10-14
+category: Recon
+description: Overview of a passive reconnaissance tool built to gather DNS, WHOIS, TLS, HTTP headers, and sitemap data for initial security analysis.
+tags: [Recon, Python, Security, Passive Recon]
 ---
 
 # Building a Passive Recon Tool to Understand Web Security Better

@@ -1,12 +1,28 @@
-baseURL = "https://aayush-lamsal.vercel.app/"
+baseURL = "https://aayush-lams.github.io/Writeups/"
 title = "Writeups"
 theme = "basic"
 
 ignoreLogs = ['warning-home-page-is-leaf-bundle']
 
+[taxonomies]
+  category = "section"
+
 [params]
   main_site = "https://aayush-lamsal.vercel.app"
   description = "Linux & Cybersecurity technical write-ups"
+
+# NOTE: category is remapped to a section taxonomy (not a slug tag)
+#       because some legacy writeups reuse 'category' to mean "section label".
+#       Update only if you restructure all writeups consistently.
+
+# Enable JSON output for search indexing
+[outputs]
+home = ["html", "searchjson"]
+page = ["html"]
+section = ["html"]
+
+[outputFormats]
+searchjson = { mediaType = "application/json", path = "search-index.json" }
 
 [menu]
   [[menu.main]]
@@ -21,3 +37,6 @@ ignoreLogs = ['warning-home-page-is-leaf-bundle']
   [[menu.main]]
     name = "Security"
     url = "/recon/"
+  [[menu.main]]
+    name = "Site Analysis"
+    url = "/site-analysis/"

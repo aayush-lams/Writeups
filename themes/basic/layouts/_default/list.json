@@ -1,0 +1,12 @@
+{{ $.Scratch.Set "pages" (slice) }}
+{{ range .Site.Pages }}
+  {{ if not .IsPage }} {{ continue }} {{ end }}
+  {{ $.Scratch.Add "pages" (dict
+    "title" .Title
+    "url" .RelPermalink
+    "category" .Params.category
+    "description" .Params.description
+    "date" .Date.Format "2006-01-02"
+  ) }}
+{{ end }}
+{{ $.Scratch.Get "pages" | jsonify }}

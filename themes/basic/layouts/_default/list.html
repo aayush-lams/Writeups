@@ -1,0 +1,21 @@
+{{ define "title" }}{{ .Title }} — {{ .Site.Title }}{{ end }}
+{{ define "main" }}
+<section id="list" class="pageSection listSection">
+  <h2 class="categoriesHead">{{ .Title }}</h2>
+  <ul class="workList">
+    {{ range .Pages }}
+      <li>
+        <a href="{{ .RelPermalink }}">
+          <div class="workName">{{ .Title }}</div>
+          <div class="workDescription">
+            {{- .Params.date | default "no date" -}}
+            {{- if .Params.category }} <span>{{ .Params.category }}</span>{{ end -}}
+            {{- if .Params.platform }} <span>{{ .Params.platform }}</span>{{ end -}}
+            {{- if .Params.difficulty }} <span>{{ .Params.difficulty }}</span>{{ end -}}
+          </div>
+        </a>
+      </li>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}

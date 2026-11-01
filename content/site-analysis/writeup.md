@@ -1,4 +1,13 @@
-# Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)
+---
+title: Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)
+date: 2026-08-07
+layout: single
+description: Full case study of passive reconnaissance of a phishing site impersonating Rastriya Banijya Bank, hosted on Firebase Hosting (front-end) and Vercel Express (back-end). Includes methodology, findings, TLS, CORS, takedown actions.
+categories: ["site-analysis"]
+tags: ["Passive Recon", "Phishing", "Firebase", "Vercel", "CORS", "KYC"]
+---
+
+**Date:** August 2026
 
 **Date:** August 2026  
 **Target:** `rastriya-banijya-bank.web.app` / `rastriya-banijya-bank.firebaseapp.com`  

@@ -1,1 +1,9 @@
 .obsidian
+.hugo_build.lock
+resources/
+public/
+tmp/
+*.swp
+*.swo
+*~
+.DS_Store

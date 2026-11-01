@@ -4,9 +4,6 @@ date: 2026-10-26
 platform: picoCTF
 category: Web
 difficulty: Medium
-tags:
-  - ratelimiting
-  - bruteforce
 ---
 # Fool the Lockout
 
@@ -15,8 +12,6 @@ tags:
 **Problem:** The challenge is a login web page with faulty rate-limiting logic. We're given a leaked `username;password` list and expected to brute-force the login while bypassing the rate limit.
 
 **Solution in one line:** Stay just under the server's max-requests-per-epoch threshold by pacing requests evenly within each window, so the lockout condition is never triggered.
-
-**Concepts:** `rate-limit bypassing` `brute-forcing` `python scripting`
 
 ---
 
