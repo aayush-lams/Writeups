@@ -1,6 +1,9 @@
 {{ define "title" }}{{ .Title }} — {{ .Site.Title }}{{ end }}
 {{ define "main" }}
 <section id="list" class="pageSection listSection">
+  {{ if .Parent }}
+    <a href="{{ .Parent.RelPermalink }}" class="backBtn" aria-label="Back to {{ .Parent.Title }}">← Back</a>
+  {{ end }}
   <h2 class="categoriesHead">{{ .Title }}</h2>
   <ul class="workList">
     {{ range .Pages }}

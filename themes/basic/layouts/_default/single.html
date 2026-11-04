@@ -1,10 +1,34 @@
 {{ define "title" }}{{ .Title }} — {{ .Site.Title }}{{ end }}
 {{ define "main" }}
 <section id="single" class="pageSection singleSection">
+  <a href="{{ .CurrentSection.RelPermalink }}" class="backBtn" aria-label="Back to {{ .CurrentSection.Title }}">← Back</a>
   <div class="pageHead">&gt; {{ .Title }} &gt;</div>
   {{ if .Params.category }}
     <div class="categoryLine">{{ .Params.category }}</div>
   {{ end }}
   <div class="content">{{ .Content }}</div>
+
+  {{ $sorted := sort (where .Site.RegularPages ".File.Dir" .File.Dir) ".File.BaseFileName" }}
+  {{ $prevPages := where $sorted ".File.BaseFileName" "lt" .File.BaseFileName }}
+  {{ $prev := false }}
+  {{ if gt (len $prevPages) 0 }}{{ $prev = index $prevPages (sub (len $prevPages) 1) }}{{ end }}
+  {{ $nextPages := where $sorted ".File.BaseFileName" "gt" .File.BaseFileName }}
+  {{ $next := false }}
+  {{ if gt (len $nextPages) 0 }}{{ $next = index $nextPages 0 }}{{ end }}
+
+  {{ if or $prev $next }}
+    <nav class="postNav" aria-label="Post navigation">
+      {{ if $prev }}
+        <a href="{{ $prev.RelPermalink }}" class="postNavBtn prevBtn">← {{ $prev.Title }}</a>
+      {{ else }}
+        <span></span>
+      {{ end }}
+      {{ if $next }}
+        <a href="{{ $next.RelPermalink }}" class="postNavBtn nextBtn">{{ $next.Title }} →</a>
+      {{ else }}
+        <span></span>
+      {{ end }}
+    </nav>
+  {{ end }}
 </section>
 {{ end }}
