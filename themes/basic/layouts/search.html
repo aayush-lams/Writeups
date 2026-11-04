@@ -1,24 +1,26 @@
 {{ define "main" }}
 <section id="searchSection" class="pageSection" style="padding-top:2rem;">
   <h2 class="categoriesHead">Search</h2>
-  <input type="text" id="searchBox" placeholder="Search by title, category, or content..." style="width:100%;padding:0.6rem;font-family:inherit;font-size:1rem;margin-bottom:1rem;border:1px solid #ccc;" oninput="doSearch(this.value)">
+  <input type="text" id="searchBox" placeholder="Search by title, category, or content..."
+    style="width:100%;padding:0.6rem;font-family:inherit;font-size:1rem;margin-bottom:1rem;border:1px solid #ccc;"
+    oninput="doSearch(this.value)">
   <ul id="results" class="workList"></ul>
 </section>
 
 <script>
   let pages = [];
-  fetch('/search-index.json/index.json').then(r => r.json()).then(data => {
+  fetch('{{ "search-index.json/index.json" | relURL }}').then(r => r.json()).then(data => {
     pages = data;
   });
 
   function doSearch(q) {
     const res = document.getElementById('results');
-    if (!q.trim()) { res.innerHTML = ''; return; }
+    if (!q.trim()) {res.innerHTML = ''; return;}
     const term = q.toLowerCase();
     const hits = pages.filter(p =>
       (p.title + ' ' + (p.content || '') + ' ' + p.category + ' ' + p.description).toLowerCase().includes(term)
     );
-    if (hits.length === 0) { res.innerHTML = '<li>Nothing found.</li>'; return; }
+    if (hits.length === 0) {res.innerHTML = '<li>Nothing found.</li>'; return;}
     res.innerHTML = hits.map(p => `<li><a href="${p.url}" class="workName">${p.title}</a><div class="workDescription">${p.category} — ${p.date}</div></li>`).join('');
   }
 </script>

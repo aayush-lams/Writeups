@@ -1,8 +1,8 @@
 <nav class="navBox">
-  <a href="/" class="navBrand">Writeups</a>
+  <a href="{{ "/Writeups" | relURL }}" class="navBrand">Writeups</a>
   <div style="display:flex; gap:1.2rem; align-items:center;">
-    <a href="/search/" class="mainSiteLink" style="margin-left:0.5rem;">Search</a>
-    <a href="/site-analysis/" class="mainSiteLink">Site Analysis</a>
+    <a href="{{ "search/" | relURL }}" class="mainSiteLink" style="margin-left:0.5rem;">Search</a>
+    <a href="{{ "site-analysis/" | relURL }}" class="mainSiteLink">Site Analysis</a>
     <a class="mainSiteLink" href="{{ .Site.Params.main_site }}">> Main site</a>
   </div>
 </nav>
