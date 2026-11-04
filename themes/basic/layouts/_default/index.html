@@ -6,12 +6,12 @@
   <h2 class="categoriesHead">Categories</h2>
   <ul class="workList">
     {{ range .Site.Menus.main }}
-      {{ if not (eq .Name "Home") }}
-        <li><a href="{{ .URL }}">
-          <div class="workName">{{ .Name }}</div>
-          <div class="workDescription">{{ .Name }} write-ups</div>
-        </a></li>
-      {{ end }}
+    {{ if not (eq .Name "Home") }}
+    <li><a href="{{ .URL }}">
+        <div class="workName">{{ .Name }}</div>
+        <div class="workDescription">{{ .Name }} write-ups</div>
+      </a></li>
+    {{ end }}
     {{ end }}
   </ul>
 </section>

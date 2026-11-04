@@ -32,11 +32,5 @@ searchjson = { mediaType = "application/json", path = "search-index.json" }
     name = "Linux"
     url = "/linux/"
   [[menu.main]]
-    name = "CTF"
-    url = "/ctf/"
-  [[menu.main]]
     name = "Security"
-    url = "/recon/"
-  [[menu.main]]
-    name = "Site Analysis"
-    url = "/site-analysis/"
+    url = "/security/"
