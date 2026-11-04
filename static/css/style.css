@@ -405,3 +405,44 @@ body {
     .navMenu a { padding: 0.3rem 0; }
     .contentFrame { width: 100%; padding: 0.75rem; }
 }
+
+/* Back button and post navigation */
+.backBtn {
+  display: inline-block;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  color: var(--textBright);
+  margin-bottom: 0.5rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.9;
+}
+.backBtn:hover {
+  opacity: 1;
+  color: var(--secondaryWhite);
+}
+.postNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--secondaryWhiteDim);
+}
+.postNavBtn {
+  font-family: var(--font);
+  font-size: 0.95rem;
+  color: var(--textAccent);
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--secondaryWhiteDim);
+  border-radius: 2px;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.postNavBtn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--secondaryWhite);
+}
+.postNavBtn.prevBtn { text-align: left; }
+.postNavBtn.nextBtn { text-align: right; margin-left: auto; }
