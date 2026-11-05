@@ -9,8 +9,6 @@
     /* FONT FAMILY */
     --font           : "JetBrains Mono", monospace;
     --fancy_font     : "Estonia", cursive;
-    /* FONT SIZE */
-    --normalBody     : clamp(1rem, calc(1rem + 0.1vw), 1.4rem);
 }
 
 /* base reset */
@@ -26,10 +24,6 @@ a { color: inherit; text-decoration: none; }
 @keyframes flicker {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.96; }
-}
-@keyframes glowFlicker {
-    0%, 100% { text-shadow: 0 0 2px var(--textBright); }
-    48%, 52% { text-shadow: 0 0 6px var(--textBright), 0 0 10px var(--textBright); }
 }
 
 html,
@@ -56,7 +50,6 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: var(--secondary);
     border-left: 2px solid var(--secondaryWhiteDim);
     border-right: 2px solid var(--secondaryWhiteDim);
     position: relative;
@@ -76,7 +69,6 @@ body {
     z-index: 11;
     gap: 1rem;
     outline: 2px solid var(--secondaryWhiteDim);
-    background-color: var(--secondary);
 }
 
 .navBrand {
@@ -96,6 +88,11 @@ body {
     color: var(--textAccent);
     text-shadow: 0 0 6px var(--textBright), 0 0 12px var(--textBright);
 }
+.navLinks {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+}
 .mainSiteLink {
     font-size: 1.1rem;
     padding: 0.25rem 0.7rem;
@@ -109,6 +106,7 @@ body {
     text-shadow: 0 0 3px var(--textBright);
     background-color: var(--secondaryWhiteDim);
 }
+.mainSiteLink.searchLink { margin-left: 0.5rem; }
 
 .navMenu {
     display: flex;
@@ -138,7 +136,7 @@ body {
     display: none;
     width: 36px;
     height: 36px;
-    border: 2px dashed grey;
+    border: 2px dashed var(--secondaryWhite);
     color: var(--secondaryWhite);
     font-size: 1rem;
     font-weight: bold;
@@ -166,13 +164,8 @@ body {
     width: 100%;
     max-width: min(90vw, 1100px);
     padding: 1rem;
-    background-color: var(--secondary);
     outline: 2px solid var(--secondaryWhiteDim);
     border-radius: 0;
-}
-
-    opacity: 0.5;
-    transition: opacity 0.2s;
 }
 
 /* Section headers */
@@ -306,7 +299,7 @@ body {
     line-height: 1.5;
 }
 .content pre code,
-.highlight code {
+.content pre .highlight code {
     background: none;
     padding: 0;
     border: none;
@@ -314,6 +307,7 @@ body {
     font-size: 0.82rem;
     color: var(--secondaryWhite);
 }
+
 /* chroma (default hugo syntax highlighting) token colors softened */
 .chroma { background-color: var(--secondary); }
 .chroma .l { color: var(--secondaryWhiteDim); } /* line numbers */
@@ -359,7 +353,6 @@ body {
     margin: 0 auto;
     padding: 0.75rem 1rem;
     border-top: 2px solid var(--secondaryWhiteDim);
-    background-color: var(--secondary);
     text-align: center;
     font-size: 0.8rem;
     color: var(--secondaryWhiteDim);
