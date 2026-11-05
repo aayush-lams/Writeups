@@ -2,22 +2,20 @@
 
 Technical write-ups and notes covering Linux, cybersecurity (recon, CTF challenges, site analysis), and system administration.
 
-## Build
+## Building from source
 
 Requires [Hugo](https://gohugo.io/).
 
+This site is built using hugo. Use following commands to build and start the server for local hosting.
+
 ```bash
-hugo server        # preview (localhost:1313)
 hugo               # build static site (public/)
+hugo server        # preview (localhost:1313)
 ```
 
-## Content
-
-Write-ups are grouped by topic under `content/`: `linux/`, `ctf/`, `recon/`, `site-analysis/`. Write-up front matter uses standard Hugo fields (`title`, `date`, `description`) plus a couple of extras (difficulty, platform, tags).
-
-## Deployment
-
 **Portfolio**: see [`https://aayush-lamsal.vercel.app`](https://aayush-lamsal.vercel.app) for personal site work and projects.
+Writeups are available at [`https://aayush-lams.github.io/Writeups`](https://aayush-lams.github.io/Writeups)
+
 
 ## License
 
