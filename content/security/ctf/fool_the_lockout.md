@@ -1,6 +1,5 @@
 ---
 title: Fool the Lockout
-date: 2026-10-26
 platform: picoCTF
 category: Web
 difficulty: Medium

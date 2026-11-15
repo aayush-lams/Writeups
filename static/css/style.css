@@ -239,6 +239,10 @@ body {
     font-size: 0.85rem;
     text-shadow: 0 0 3px var(--textBright);
 }
+.postDate {
+    color: var(--secondaryWhite);
+    font-size: 0.8rem;
+}
 .mainSiteBox {
     margin-top: 1rem;
 }
@@ -365,8 +369,10 @@ body {
 @media screen and (max-width: 1000px) {
     body {
         width: 100%;
-        height: auto;
-        min-height: 100vh;
+        /* Same layout model as desktop: a fixed-height column where the nav and
+           footer stay put and .pageMain is the only scroll container. */
+        height: 100vh;
+        height: 100dvh;
         flex-direction: column;
         border-left: none;
         border-right: none;

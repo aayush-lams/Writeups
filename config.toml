@@ -4,6 +4,15 @@ theme = "basic"
 
 ignoreLogs = ['warning-home-page-is-leaf-bundle']
 
+# Derive page dates from git history so new writeups don't need a manual
+# "date:" in front matter. An explicit "date:"/lastmod still wins if present.
+# Requires a full clone in CI (see fetch-depth in .github/workflows/hugo.yml).
+enableGitInfo = true
+
+[frontmatter]
+  date = ["date", ":git", ":fileModTime"]
+  lastmod = ["lastmod", ":git", ":fileModTime", "date", "publishDate"]
+
 [taxonomies]
   category = "section"
 

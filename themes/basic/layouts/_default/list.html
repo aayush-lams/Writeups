@@ -11,7 +11,7 @@
         <a href="{{ .RelPermalink }}">
           <div class="workName">{{ .Title }}</div>
           <div class="workDescription">
-            {{- .Params.date | default "no date" -}}
+            {{- if not .Date.IsZero }}{{ .Date.Format "2006-01-02" }}{{ else }}no date{{ end -}}
             {{- if .Params.category }} <span>{{ .Params.category }}</span>{{ end -}}
             {{- if .Params.platform }} <span>{{ .Params.platform }}</span>{{ end -}}
             {{- if .Params.difficulty }} <span>{{ .Params.difficulty }}</span>{{ end -}}

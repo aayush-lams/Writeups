@@ -6,6 +6,9 @@
   {{ if .Params.category }}
     <div class="categoryLine">{{ .Params.category }}</div>
   {{ end }}
+  {{ if not .Date.IsZero }}
+    <div class="postDate">{{ .Date.Format "2006-01-02" }}</div>
+  {{ end }}
   <div class="content">{{ .Content }}</div>
 
   {{ $sorted := sort (where .Site.RegularPages ".File.Dir" .File.Dir) ".File.BaseFileName" }}

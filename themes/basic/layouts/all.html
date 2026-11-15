@@ -1,0 +1,23 @@
+{{ define "title" }}All Posts — {{ .Site.Title }}{{ end }}
+{{ define "main" }}
+<section id="allPostsSection" class="pageSection listSection">
+  <h2 class="categoriesHead">All Posts</h2>
+  {{ $sorted := .Site.RegularPages.ByLastmod.Reverse }}
+  <ul class="workList">
+    {{ range $sorted }}
+      {{ $d := .Lastmod }}
+      {{ if $d.IsZero }}{{ $d = .Date }}{{ end }}
+      <li>
+        <a href="{{ .RelPermalink }}">
+          <div class="workName">{{ .Title }}</div>
+          <div class="workDescription">
+            {{ $cat := .Params.category }}
+            {{ if $cat }}<span>{{ $cat }}</span>{{ end }}
+            — {{ $d.Format "2006-01-02" }}
+          </div>
+        </a>
+      </li>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}

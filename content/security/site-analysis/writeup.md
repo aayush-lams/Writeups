@@ -1,24 +1,25 @@
 ---
-title: Passive Recon Case Study — RBB Bank Phishing Kit (Firebase + Vercel)
-date: 2026-08-07
-layout: single
-description: Full case study of passive reconnaissance of a phishing site impersonating Rastriya Banijya Bank, hosted on Firebase Hosting (front-end) and Vercel Express (back-end). Includes methodology, findings, TLS, CORS, takedown actions.
-categories: ["site-analysis"]
-tags: ["Passive Recon", "Phishing", "Firebase", "Vercel", "CORS", "KYC"]
+title: Case Study on Rastriya Banijya Bank Phising Case
+description: Full case study of passive reconnaissance of a phishing site impersonating Rastriya Banijya Bank, hosted on Firebase Hosting (front-end) and Vercel Express (back-end).
+categories:
+  - site-analysis
+tags:
+  - Phishing
+  - Firebase
+  - Vercel
+  - CORS
+  - KYC
 ---
 
-**Date:** August 2026
-
-**Date:** August 2026  
 **Target:** `rastriya-banijya-bank.web.app` / `rastriya-banijya-bank.firebaseapp.com`  
 **Assessment Type:** Passive Reconnaissance (non-intrusive)  
-**Supporting Files:** [`raw_output.json`](../raw_output.json), [`report.md`](../report.md)
+**Supporting Files:** [`raw_output.json`]({{< staticref "assets/RBB-scam-case/raw_output.json" >}}), [`report.md`]({{< relref "assets/RBB-scam-case/report.md" >}})
 
 ---
 
 ## Overview
 
-This case study documents the passive reconnaissance of a phishing site impersonating **Rastriya Banijya Bank (RBB)**, a Nepali government-owned commercial bank. The site was discovered in the wild hosted at:
+This case study documents the reconnaissance of a phishing site impersonating **Rastriya Banijya Bank (RBB)**, a Nepali government-owned commercial bank. The site was discovered in the wild hosted at:
 
 - `rastriya-banijya-bank.web.app`
 - `rastriya-banijya-bank.firebaseapp.com`
@@ -116,7 +117,7 @@ This means **any origin** can POST to (and likely query) this backend. For a phi
 
 ### 6. Missing Baseline Security Headers
 
-The automated report ([`report.md`](../report.md)) identified 8 missing or misconfigured security headers on the phishing front-end:
+The automated report ([`report.md`]({{< relref "assets/RBB-scam-case/report.md" >}})) identified 8 missing or misconfigured security headers on the phishing front-end:
 
 | Severity | Finding |
 |----------|---------|
@@ -198,8 +199,8 @@ All assessment stayed within strict passive and ethical limits:
 
 | File | Description |
 |------|-------------|
-| `raw_output.json` | Raw JSON output from the passive recon tool (WHOIS, DNS, GeoIP, headers, TLS, robots/sitemap). |
-| `report.md` | Auto-generated markdown report summarizing security header findings and recommendations. |
+| [`raw_output.json`]({{< staticref "assets/RBB-scam-case/raw_output.json" >}}) | Raw JSON output from the passive recon tool (WHOIS, DNS, GeoIP, headers, TLS, robots/sitemap). |
+| [`report.md`]({{< relref "assets/RBB-scam-case/report.md" >}}) | Auto-generated markdown report summarizing security header findings and recommendations. |
 | `writeup.md` | This document — the full case study writeup. |
 
 ---
