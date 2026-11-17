@@ -39,9 +39,12 @@ So the objective is to look at the source code provided in a zip file and find t
 The code-base has flawed rate-limiting logic: it allows up to a set maximum number of requests within a fixed epoch (time window). Going over that limit within the window results in an IP lockout.
 
 **Flaws:**
-- The password list is small enough that it can be exhausted well within the allowed request budget.
-- The back-end's failed-attempt threshold is generous enough to leave a comfortable margin for iteration before a lockout is ever risked.
-- It uses fixed-window rate-limiting instead of a sliding window or persistent, continuously-tracked counter.
+**The actual flaw** is the fixed-window rate-limiting design: it resets on a wall-clock boundary rather than tracking a rolling window, so pacing requests just under the threshold sidesteps it entirely.
+
+Two things worked in the solver’s favor on top of that:
+
+- The credential list was short enough to exhaust well inside the request budget the rate limit allowed. There is no need to get clever with timing precision or optimize the script beyond simple pacing.
+- The failed-attempt threshold itself was generous, which left a wide margin of error. Even imprecise timing wouldn’t have risked tripping a lockout.
 
 **Where it shows up in real life:**
 This type of flaw frequently shows up when developers roll their own rate-limiting logic instead of relying on industry-standard implementations like those built into Nginx, AWS WAF, or Cloudflare. A fixed-window scheme lets an attacker send a burst of requests right before a window closes and another burst right after it reopens — effectively doubling the allowed request rate in a very small span of time.
@@ -93,11 +96,13 @@ def load_credentials(path):
     return creds
 ```
 
-Complete script for the solution is posted below this section. The script works through the leaked credential list one pair at a time, but it paces itself so it never crosses the server's 10-requests-per-30-second threshold. It picks a safe budget of 9 requests per epoch and spreads them evenly across the 30 seconds (`spacing = EPOCH_DURATION / MAX_REQUESTS`), instead of firing them all at once. Before every attempt it checks whether it's still inside an active lockout or whether the current epoch has expired, and resets its internal counters accordingly, mirroring the same window logic the server itself uses. 
+Complete script for the solution is posted below this section. The script works through the leaked credential list one pair at a time, but it paces itself so it never crosses the server's 10-requests-per-30-second threshold. It picks a safe budget of 9 requests per epoch and spreads them evenly across the 30 seconds (`spacing = EPOCH_DURATION / MAX_REQUESTS`) adding a safety margin of a single request, instead of firing them all at once. Before every attempt it checks whether it's still inside an active lockout or whether the current epoch has expired, and resets its internal counters accordingly, mirroring the same window logic the server itself uses. 
 
-After each login attempt, `classify()` reads the response and sorts it into one of a few buckets — rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. If the server does rate-limit it anyway, the script simply sleeps until the lockout ends and resumes from where it left off, rather than crashing or hammering the server further.
+After each login attempt, `classify()` reads the response and sorts it into one of a few buckets :  rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. If the server does rate-limit it anyway, the script simply sleeps until the lockout ends and resumes from where it left off, rather than crashing or hammering the server further.
 
-After the brute-force completes or the 'Success' indication is printed in the console, we get the username and password, using which we can login to get the flag.
+After the brute-force completes or the 'Success' indication is printed in the console, we get the username and password, using which we can login to get the flag. The loop doesn’t break after success, which is harmless here since the correct credential was pretty late in the list, but a `break` would make that not depend on list order
+
+The success check matches on the word `flag` anywhere in the response text which is a loose check, fine for this challenge’s known response shape, but it would need a more specific marker (page title, a known element) against an arbitrary target.
 
 ---
 

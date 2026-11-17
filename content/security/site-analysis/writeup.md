@@ -68,7 +68,7 @@ The phishing kit uses a **split architecture**:
 
 - **Back-end (Vercel):** The actual data submission goes cross-origin via `fetch()` to a separate Vercel-hosted Express backend at `mero-khata[.]vercel[.]app/registerRBB`. This is the persistent component. It survives front-end takedowns and can receive submissions from any new front-end the attacker deploys.
 
-This separation is a hallmark of modern phishing kit design. The front-end is ephemeral and the back-end is the real infrastructure. Disrupting one does not necessarily disrupt the other.
+The front-end is ephemeral and the back-end is the real infrastructure. Disrupting one does not necessarily disrupt the other.
 
 ### 3. Backend Stack and Behavior
 
