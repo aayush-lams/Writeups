@@ -1,5 +1,4 @@
 ---
-layout: default
 title: Recon Tool
 ---
 
@@ -232,19 +231,19 @@ The report is not meant to say “this website is hacked” or “this is exploi
 
 This tool is intentionally limited, and that is important to mention.
 
-First, it is passive. It does not scan ports, brute force directories, crawl the full website, test payloads, check login forms, or exploit anything. That keeps it safer and simpler, but it also means the findings are only surface-level observations.
+- The recon is passive. It does not scan ports, brute force directories, crawl the full website, test payloads, check login forms, or exploit anything. That keeps it safer and simpler, but it also means the findings are only surface-level observations.
 
-Second, the tool depends on public data sources and basic HTTP responses. If a domain blocks requests, hides behind a CDN, has rate limits, or returns different responses based on region/user-agent, the result may not represent the full infrastructure.
+- The tool depends on public data sources and basic HTTP responses. If a domain blocks requests, hides behind a CDN, has rate limits, or returns different responses based on region/user-agent, the result may not represent the full infrastructure.
 
-Third, GeoIP is only approximate. The tool currently uses the first `A` record from DNS. If the site uses Cloudflare or another CDN, the location and ISP information may describe the CDN edge, not the actual origin server.
+- GeoIP is only approximate. The tool currently uses the first `A` record from DNS. If the site uses Cloudflare or another CDN, the location and ISP information may describe the CDN edge, not the actual origin server.
 
-Fourth, missing headers are not always vulnerabilities by themselves. They are security observations. A missing `Content-Security-Policy` or `Permissions-Policy` may matter a lot for one application and less for another depending on what the site actually does.
+- Missing headers are not always vulnerabilities by themselves. They are security observations. A missing `Content-Security-Policy` or `Permissions-Policy` may matter a lot for one application and less for another depending on what the site actually does.
 
-Fifth, `robots.txt` and `sitemap.xml` only reveal what the site publicly exposes or advertises to crawlers. `robots.txt` is not authorization, and `sitemap.xml` is not a complete map of every possible route.
+- `robots.txt` and `sitemap.xml` only reveal what the site publicly exposes or advertises to crawlers. `robots.txt` is not authorization, and `sitemap.xml` is not a complete map of every possible route.
 
-Sixth, the report is generated as markdown only. That is readable and simple, but there is no PDF export, HTML styling, database storage, or web dashboard yet.
+- The report is generated as markdown only. That is readable and simple, but there is no PDF export, HTML styling, database storage, or web dashboard yet.
 
-Lastly, the tool is still a learning project. It is useful for understanding passive recon and generating an initial report, but it should not be treated as a complete security assessment.
+- The tool is still a learning project. It is useful for understanding passive recon and generating an initial report, but it should not be treated as a complete security assessment.
 
 ## What I Learned
 
