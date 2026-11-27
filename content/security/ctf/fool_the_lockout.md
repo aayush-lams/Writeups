@@ -232,6 +232,22 @@ if __name__ == "__main__":
 
 ```
 
+and running it will get us:
+
+```
+Loaded 100 creds | MAX_REQUESTS=9 EPOCH=30.0s LOCKOUT=120.0s
+[1/100] Trying 'rora:winner1' ...
+    [FAIL] Invalid credentials
+[2/100] Trying 'birendra:rumble' ...
+...
+...
+[59/100] Trying 'tera:mccabe' ...
+    [FAIL] Invalid credentials
+[60/100] Trying 'bethan:barber' ...
+[SUCCESS] Logged in as 'bethan:barber' (SUCCESS_REDIRECT)
+Done -- stopping, correct credential found.
+```
+
 After each login attempt, `classify()` reads the response and sorts it into one of a few buckets: rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. Redirect success is detected by checking `resp.history` and once `requests` follows a redirect automatically, the status code you see is always the destination page’s, not the redirect’s, so `resp.history` is where that evidence actually survives. If the server does rate-limit it anyway, the script sleeps until the lockout ends and resumes from where it left off rather than crashing or hammering the server further. A transient network error on a single attempt (timeout, dropped connection) is retried a bounded number of times before moving on, so a momentary hiccup doesn’t cause the script to silently skip past the correct credential.
 
 As soon as a success is detected, the script stops immediately and prints the matching username and password, which is then used to log in and retrieve the flag.

@@ -1,7 +1,6 @@
 ---
-title: Recon Tool
+title: About personal recon tool
 ---
-
 # Building a Passive Recon Tool to Understand Web Security Better
 
 System backend is a vast topic. No two applications share the same mechanism, let alone the same backend. Each one has its own architecture, security posture, and weak points. The more we understand a system’s backend, the more we start to see how its security holds up, things like header policies, TLS configuration, DNS hygiene, and what information it leaks publicly.
@@ -16,7 +15,9 @@ That is where this tool comes in. Instead of running multiple commands separatel
 
 ## Why I Chose Python and Nix Flakes
 
-I chose Python as the language for this tool because it is simple and quick to get working. For a learning project, that mattered a lot. I wanted to learn the concepts along the way rather than spend too much time trying to make the tool perfect from the beginning.
+Before moving on to the actual nitty gritty, the entire code base can be accessed at : https://www.github.com/aayush-lams/passiveRecon
+
+For this tool,I decided on python programming language because it is simple and quick to get working. For a learning project, that mattered a lot. I wanted to learn the concepts along the way rather than spend too much time trying to make the tool perfect from the beginning.
 
 For environment management, I used a Nix flake to create a shell environment for the Python packages.
 
@@ -55,7 +56,7 @@ While writing this logic, I realized that even a seemingly normal website has ma
 
 The reporting engine then takes the raw collected data and turns it into something readable. Instead of just dumping JSON into the terminal, it creates a markdown report with a summary, findings, evidence, recommendations, and raw data in the appendix.
 
-That part was important to me because raw data alone is not always useful. A terminal dump may look interesting in the moment, but after a week it becomes hard to remember what mattered. A proper report gives structure to the findings.
+Raw data gives enough information for the people techy enough to understand them, but the users many times just want to get summary of what has been obtained. Also after some time the information dump from raw output makes it hard to remember what mattered. In this case, a proper report gives structure to the findings.
 
 The rough flow looks like this:
 
@@ -137,7 +138,7 @@ Some examples are:
 
 Headers are a very interesting part of web security because they tell the browser how to behave. Some headers protect against clickjacking, some reduce cross-site scripting risk, some control caching, and some prevent the browser from leaking too much referrer information.
 
-The tool fetches the site over HTTPS by default if no scheme is provided, follows redirects, and records the final URL, status code, redirect state, filtered headers, and security-relevant headers from redirect history.
+The tozaS by default if no scheme is provided, follows redirects, and records the final URL, status code, redirect state, filtered headers, and security-relevant headers from redirect history.
 
 Missing headers do not always mean the site is directly vulnerable, but they are useful security observations. They tell us about the hardening posture of the web application.
 
@@ -227,9 +228,9 @@ This made the tool feel more complete. A clean report is much more useful than a
 
 The report is not meant to say “this website is hacked” or “this is exploitable.” It is more like an initial passive reconnaissance summary. It gives observations that can guide deeper manual review.
 
-## Limitations of the Current Project
+## Characteristics of the Current Project
 
-This tool is intentionally limited, and that is important to mention.
+This tool is intentionally scoped, and that is important to mention.
 
 - The recon is passive. It does not scan ports, brute force directories, crawl the full website, test payloads, check login forms, or exploit anything. That keeps it safer and simpler, but it also means the findings are only surface-level observations.
 
@@ -254,18 +255,6 @@ A missing header is not always a critical vulnerability. A Cloudflare IP address
 These small distinctions matter.
 
 I also learned that structuring a tool properly makes it easier to extend. Since the project is separated into modules, analysis, and reporting, adding a new check later should not require rewriting everything.
-
-The rough structure is:
-
-```text
-domain
-  -> recon modules collect public data
-  -> raw output is saved as JSON
-  -> analysis engine creates findings
-  -> report generator writes markdown report
-```
-
-This separation made the project easier to reason about.
 
 ## Closing Thoughts
 
