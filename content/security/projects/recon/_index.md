@@ -1,4 +1,4 @@
 ---
-title: "Security"
+title: Projects
 ---
 Security and reconnaissance write-ups.
